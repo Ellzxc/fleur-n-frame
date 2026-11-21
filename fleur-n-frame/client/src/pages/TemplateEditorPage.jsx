@@ -26,6 +26,51 @@ const SAMPLE_PHOTOS = [
 
 const SNAP_THRESHOLD = 8;
 
+const rafRef = useRef(null);
+
+function snapPosition(x, y, w, h, others, id, containerW, containerH) {
+  const sx = SNAP_THRESHOLD / containerW;
+  const sy = SNAP_THRESHOLD / containerH;
+  let nx = x;
+  let ny = y;
+
+  for (const other of others) {
+    if (other.id === id) continue;
+    const ox = other.x;
+    const oy = other.y;
+    const ow = other.width;
+    const oh = other.height;
+
+    if (Math.abs(nx - (ox + ow)) < sx) nx = ox + ow;
+    if (Math.abs((nx + w) - ox) < sx) nx = ox - w;
+    if (Math.abs(nx - ox) < sx) nx = ox;
+    if (Math.abs((nx + w) - (ox + ow)) < sx) nx = ox + ow - w;
+
+    if (Math.abs(ny - (oy + oh)) < sy) ny = oy + oh;
+    if (Math.abs((ny + h) - oy) < sy) ny = oy - h;
+    if (Math.abs(ny - oy) < sy) ny = oy;
+    if (Math.abs((ny + h) - (oy + oh)) < sy) ny = oy + oh - h;
+  }
+
+  return { x: clamp(nx, 0, 1 - w), y: clamp(ny, 0, 1 - h) };
+}
+
+function snapEdge(value, size, minVal, maxVal, others, id, snapPx) {
+  let v = clamp(value, minVal, maxVal);
+  for (const other of others) {
+    if (other.id === id) continue;
+    const ox = other.x;
+    const oy = other.y;
+    const ow = other.width;
+    const oh = other.height;
+    if (Math.abs(v - ox) < snapPx) v = ox;
+    if (Math.abs((v + size) - (ox + ow)) < snapPx) v = ox + ow - size;
+    if (Math.abs(v - (ox + ow)) < snapPx) v = ox + ow;
+    if (Math.abs((v + size) - ox) < snapPx) v = ox - size;
+  }
+  return clamp(v, minVal, maxVal);
+}
+
 function getClientPos(e) {
   if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
   return { x: e.clientX, y: e.clientY };
@@ -58,7 +103,10 @@ export default function TemplateEditorPage({ navigate, templateId }) {
         setMessage(err.message);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafRef.current);
+    };
   }, [templateId]);
 
   const containerRect = useCallback(() => {
@@ -98,39 +146,26 @@ export default function TemplateEditorPage({ navigate, templateId }) {
     };
     document.body.style.userSelect = "none";
     document.body.style.cursor = "move";
+    let pendingFrame = false;
     const onMove = (ev) => {
       const d = dragRef.current;
       if (!d || !d.active) return;
       const p = getClientPos(ev);
       const dx = (p.x - d.startX) / d.containerW;
       const dy = (p.y - d.startY) / d.containerH;
-      let nx = clamp(d.frameX + dx, 0, 1 - d.frameW);
-      let ny = clamp(d.frameY + dy, 0, 1 - d.frameH);
-
-      const snapPx = SNAP_THRESHOLD / d.containerW;
-      const snapPy = SNAP_THRESHOLD / d.containerH;
-      for (const other of frames) {
-        if (other.id === d.frame.id) continue;
-        const ox = other.x;
-        const oy = other.y;
-        const ow = other.width;
-        const oh = other.height;
-
-        if (Math.abs(nx - (ox + ow)) < snapPx) nx = ox + ow;
-        if (Math.abs((nx + d.frameW) - ox) < snapPx) nx = ox - d.frameW;
-        if (Math.abs(ny - (oy + oh)) < snapPy) ny = oy + oh;
-        if (Math.abs((ny + d.frameH) - oy) < snapPy) ny = oy - d.frameH;
-        if (Math.abs(nx - ox) < snapPx) nx = ox;
-        if (Math.abs((nx + d.frameW) - (ox + ow)) < snapPx) nx = ox + ow - d.frameW;
-        if (Math.abs(ny - oy) < snapPy) ny = oy;
-        if (Math.abs((ny + d.frameH) - (oy + oh)) < snapPy) ny = oy + oh - d.frameH;
+      if (!pendingFrame) {
+        pendingFrame = true;
+        rafRef.current = requestAnimationFrame(() => {
+          let nx = clamp(d.frameX + dx, 0, 1 - d.frameW);
+          let ny = clamp(d.frameY + dy, 0, 1 - d.frameH);
+          const snapped = snapPosition(nx, ny, d.frameW, d.frameH, frames, d.frame.id, d.containerW, d.containerH);
+          setFrameField(d.frame.id, { x: snapped.x, y: snapped.y });
+          pendingFrame = false;
+        });
       }
-
-      nx = clamp(nx, 0, 1 - d.frameW);
-      ny = clamp(ny, 0, 1 - d.frameH);
-      setFrameField(d.frame.id, { x: nx, y: ny });
     };
     const onEnd = () => {
+      cancelAnimationFrame(rafRef.current);
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
       document.removeEventListener("mousemove", onMove);
@@ -166,6 +201,7 @@ export default function TemplateEditorPage({ navigate, templateId }) {
     };
     document.body.style.userSelect = "none";
     document.body.style.cursor = resizeCursor(handle);
+    let pendingFrame = false;
     const onMove = (ev) => {
       const d = resizeRef.current;
       if (!d || !d.active) return;
@@ -191,16 +227,48 @@ export default function TemplateEditorPage({ navigate, templateId }) {
         y = d.frameY + dy;
       }
 
-      if (w < minW) w = minW;
-      if (h < minH) h = minH;
-      if (x < 0) { w = Math.max(minW, w + x); x = 0; }
-      if (y < 0) { h = Math.max(minH, h + y); y = 0; }
-      if (x + w > 1) w = 1 - x;
-      if (y + h > 1) h = 1 - y;
+      if (!pendingFrame) {
+        pendingFrame = true;
+        rafRef.current = requestAnimationFrame(() => {
+          if (w < minW) w = minW;
+          if (h < minH) h = minH;
 
-      setFrameField(d.frame.id, { x, y, width: w, height: h });
+          const snapX = SNAP_THRESHOLD / d.containerW;
+          const snapY = SNAP_THRESHOLD / d.containerH;
+
+          if (d.handle.includes("w")) {
+            x = snapEdge(x, w, 0, 1 - w, frames, d.frame.id, snapX);
+            w = d.frameW + (d.frameX - x);
+            if (w < minW) { w = minW; x = d.frameX + d.frameW - minW; }
+          }
+          if (d.handle.includes("e")) {
+            const right = x + w;
+            const snappedRight = snapEdge(right, w, x + minW, 1, frames, d.frame.id, snapX);
+            w = snappedRight - x;
+          }
+          if (d.handle.includes("n")) {
+            y = snapEdge(y, h, 0, 1 - h, frames, d.frame.id, snapY);
+            h = d.frameH + (d.frameY - y);
+            if (h < minH) { h = minH; y = d.frameY + d.frameH - minH; }
+          }
+          if (d.handle.includes("s")) {
+            const bottom = y + h;
+            const snappedBottom = snapEdge(bottom, h, y + minH, 1, frames, d.frame.id, snapY);
+            h = snappedBottom - y;
+          }
+
+          if (x < 0) { w = Math.max(minW, w + x); x = 0; }
+          if (y < 0) { h = Math.max(minH, h + y); y = 0; }
+          if (x + w > 1) w = 1 - x;
+          if (y + h > 1) h = 1 - y;
+
+          setFrameField(d.frame.id, { x, y, width: w, height: h });
+          pendingFrame = false;
+        });
+      }
     };
     const onEnd = () => {
+      cancelAnimationFrame(rafRef.current);
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
       document.removeEventListener("mousemove", onMove);
