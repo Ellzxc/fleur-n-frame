@@ -39,6 +39,10 @@ export default {
           "50%": { opacity: "1" },
         },
       },
+      filter: {
+        grayscale: "grayscale(100%)",
+        sepia: "sepia(100%) saturate(1.2)",
+      },
     },
   },
   plugins: [],
