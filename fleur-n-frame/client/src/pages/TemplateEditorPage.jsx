@@ -577,7 +577,7 @@ export default function TemplateEditorPage({ navigate, templateId }) {
               <img
                 src={templateImageUrl(template.original_path)}
                 alt="Template"
-                className="block max-w-full max-h-[60vh] object-contain"
+                className="block max-w-full max-h-[60vh] object-fill"
                 onError={(e) => {
                   e.currentTarget.src = template.original_path;
                 }}
