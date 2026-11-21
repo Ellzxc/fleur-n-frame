@@ -1,86 +1,77 @@
-const fs = require("fs");
-const path = require("path");
+const mongoose = require("mongoose");
+const { cloudinary } = require("./cloudinary");
 
-const DATA_FILE = path.join(__dirname, "data.json");
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
-function ensureFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ templates: [], photos: [] }, null, 2));
-  }
-}
+const connection = mongoose.connection;
+connection.on("error", console.error.bind(console, "MongoDB connection error:"));
+connection.once("open", () => console.log("Connected to MongoDB Atlas"));
 
-function readData() {
-  ensureFile();
-  return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-}
+const templateSchema = new mongoose.Schema({
+  name: String,
+  filename: String,
+  original_path: String,
+  width: Number,
+  height: Number,
+  status: { type: String, default: "draft" },
+  frames: { type: mongoose.Schema.Types.Mixed, default: [] },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now },
+});
 
-function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
+const photoSessionSchema = new mongoose.Schema({
+  id: { type: String, unique: true },
+  photos: [String],
+  created_at: { type: Date, default: Date.now },
+});
+
+const Template = mongoose.model("Template", templateSchema);
+const PhotoSession = mongoose.model("PhotoSession", photoSessionSchema);
 
 function parseFrames(t) {
   if (t == null) return [];
-  if (typeof t.frames === "string") {
-    try {
-      const arr = JSON.parse(t.frames);
-      return Array.isArray(arr) ? arr : [];
-    } catch (e) { return []; }
-  }
   if (Array.isArray(t.frames)) return t.frames;
   return [];
 }
 
 const db = {
   listTemplates({ published } = {}) {
-    const data = readData();
-    let templates = data.templates || [];
-    if (published === true || published === "true") {
-      templates = templates.filter((t) => t.status === "published");
-    }
-    return templates
-      .map((t) => ({ ...t, frames: parseFrames(t) }))
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const filter = published === true || published === "true" ? { status: "published" } : {};
+    return Template.find(filter).sort({ created_at: -1 }).lean().then((templates) =>
+      templates.map((t) => ({ ...t, frames: parseFrames(t) }))
+    );
   },
 
   getTemplate(id) {
-    const data = readData();
-    const t = (data.templates || []).find((x) => x.id == id);
-    if (!t) return null;
-    return { ...t, frames: parseFrames(t) };
+    return Template.findById(id).lean().then((t) => {
+      if (!t) return null;
+      return { ...t, frames: parseFrames(t) };
+    });
   },
 
   createTemplate({ name, filename, originalPath, width, height }) {
-    const data = readData();
-    const id = Date.now().toString();
-    const now = new Date().toISOString();
-    const template = {
-      id,
+    const template = new Template({
       name,
       filename,
       original_path: originalPath,
       width: width ? Number(width) : null,
       height: height ? Number(height) : null,
       status: "draft",
-      frames: JSON.stringify([]),
-      created_at: now,
-      updated_at: now,
-    };
-    data.templates.push(template);
-    writeData(data);
-    return { ...template, frames: [] };
+      frames: [],
+    });
+    return template.save().then((t) => ({ ...t.toObject(), frames: [] }));
   },
 
   updateTemplate(id, fields) {
-    const data = readData();
-    const idx = (data.templates || []).findIndex((x) => x.id == id);
-    if (idx === -1) return null;
-    const t = data.templates[idx];
-    if (fields.name !== undefined) t.name = fields.name;
-    if (fields.status !== undefined) t.status = fields.status;
-    if (fields.frames !== undefined) t.frames = JSON.stringify(fields.frames);
-    t.updated_at = new Date().toISOString();
-    writeData(data);
-    return { ...t, frames: parseFrames(t) };
+    const update = { ...fields, updated_at: new Date() };
+    if (fields.frames !== undefined) update.frames = JSON.stringify(fields.frames);
+    return Template.findByIdAndUpdate(id, update, { new: true, lean: true }).then((t) => {
+      if (!t) return null;
+      return { ...t, frames: parseFrames(t) };
+    });
   },
 
   publishTemplate(id) {
@@ -88,27 +79,19 @@ const db = {
   },
 
   deleteTemplate(id) {
-    const data = readData();
-    const idx = (data.templates || []).findIndex((x) => x.id == id);
-    if (idx === -1) return null;
-    const removed = data.templates.splice(idx, 1)[0];
-    writeData(data);
-    return removed;
+    return Template.findById(id).lean().then((t) => {
+      if (!t) return null;
+      return Template.findByIdAndDelete(id).then(() => t);
+    });
   },
 
-  // Photo session storage
   createPhotoSession(sessionId, photos) {
-    const data = readData();
-    data.photos = data.photos || [];
-    data.photos.push({ id: sessionId, photos, created_at: new Date().toISOString() });
-    writeData(data);
-    return { id: sessionId, photos };
+    const session = new PhotoSession({ id: sessionId, photos });
+    return session.save().then(() => ({ id: sessionId, photos }));
   },
 
   getPhotoSession(sessionId) {
-    const data = readData();
-    const session = (data.photos || []).find((x) => x.id == sessionId);
-    return session || null;
+    return PhotoSession.findOne({ id: sessionId }).lean().then((session) => session || null);
   },
 };
 
