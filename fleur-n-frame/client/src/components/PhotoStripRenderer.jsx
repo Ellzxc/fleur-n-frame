@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { templateImageUrl } from "@/lib/api";
 
-export function PhotoStripRenderer({ template, photos, maxDimension, onReady }) {
+export function PhotoStripRenderer({ template, photos, maxDimension, onReady, filter }) {
   const canvasRef = useRef(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [ready, setReady] = useState(false);
@@ -50,7 +50,25 @@ export function PhotoStripRenderer({ template, photos, maxDimension, onReady }) 
           const fy = (frame.y || 0) * h;
           const fw = Math.max((frame.width || 0) * w, 1);
           const fh = Math.max((frame.height || 0) * h, 1);
-          drawCover(ctx, pImg, fx, fy, fw, fh);
+
+          const scale = Math.max(fw / pImg.width, fh / pImg.height);
+          const sw = pImg.width * scale;
+          const sh = pImg.height * scale;
+          const dx = fx + (fw - sw) / 2;
+          const dy = fy + (fh - sh) / 2;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(fx, fy, fw, fh);
+          ctx.clip();
+
+          if (filter === "bw") ctx.filter = "grayscale(100%)";
+          else if (filter === "vintage") ctx.filter = "sepia(100%) saturate(1.2)";
+          else ctx.filter = "none";
+
+          ctx.drawImage(pImg, dx, dy, sw, sh);
+          ctx.restore();
+
           pending -= 1;
           if (pending === 0) finalize();
         };
@@ -64,7 +82,7 @@ export function PhotoStripRenderer({ template, photos, maxDimension, onReady }) 
     };
     img.onerror = () => setReady(false);
     img.src = templateImageUrl(template.original_path);
-  }, [template, photos, maxDimension]);
+  }, [template, photos, maxDimension, filter]);
 
   return (
     <canvas

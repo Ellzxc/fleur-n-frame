@@ -11,57 +11,6 @@ const FILTERS = [
   { id: "vintage", label: "Vintage" },
 ];
 
-function applyFilter(dataUrl, filterId) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      if (filterId === "none") {
-        resolve(dataUrl);
-        return;
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-
-      const w = img.naturalWidth;
-      const h = img.naturalHeight;
-      const imageData = ctx.getImageData(0, 0, w, h);
-      const data = imageData.data;
-
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const idx = (y * w + x) * 4;
-          const r = data[idx];
-          const g = data[idx + 1];
-          const b = data[idx + 2];
-
-          if (filterId === "bw") {
-            const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-            data[idx] = gray;
-            data[idx + 1] = gray;
-            data[idx + 2] = gray;
-          } else if (filterId === "vintage") {
-            const tr = Math.min(255, r * 1.1 + g * 0.1 + b * 0.1);
-            const tg = Math.min(255, r * 0.1 + g * 1.0 + b * 0.1);
-            const tb = Math.min(255, r * 0.1 + g * 0.1 + b * 1.0);
-            data[idx] = tr;
-            data[idx + 1] = tg;
-            data[idx + 2] = tb;
-          }
-        }
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.src = dataUrl;
-    img.onerror = () => resolve(dataUrl);
-  });
-}
-
 export default function StripSelectionPage({ navigate, sessionId: passedSessionId }) {
   const { photos } = usePhotos();
   const [templates, setTemplates] = useState([]);
@@ -72,7 +21,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   const [error, setError] = useState(null);
   const [sessionId, setSessionId] = useState(passedSessionId || null);
   const [filter, setFilter] = useState("none");
-  const [filteredPhotos, setFilteredPhotos] = useState([]);
 
   const load = useCallback(async () => {
     try {
@@ -86,21 +34,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   }, [selectedId]);
 
   useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    const compute = async () => {
-      if (filter === "none") {
-        setFilteredPhotos(photos);
-        return;
-      }
-      const resolved = [];
-      for (const p of photos) {
-        resolved.push(p ? await applyFilter(p, filter) : null);
-      }
-      setFilteredPhotos(resolved);
-    };
-    compute();
-  }, [photos, filter]);
 
   const template = templates.find((t) => t.id === selectedId) || null;
 
@@ -217,8 +150,9 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                     <div className="absolute inset-0 bg-fleur-blush/30 group-hover:bg-fleur-blush/50 transition-colors"></div>
                     <PhotoStripRenderer
                       template={t}
-                      photos={filter === "none" ? photos : filteredPhotos}
+                      photos={photos}
                       maxDimension={600}
+                      filter={filter}
                     />
                     <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-fleur-ink text-xs font-semibold shadow-sm border border-white/50">
                       <Heart className="w-3 h-3 fill-current" /> {t.frames?.length || 0} frames
@@ -260,9 +194,10 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                     </div>
                     <PhotoStripRenderer
                       template={template}
-                      photos={filter === "none" ? photos : filteredPhotos}
+                      photos={photos}
                       maxDimension={1200}
                       onReady={handleRendererReady}
+                      filter={filter}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all"></div>
                   </div>
