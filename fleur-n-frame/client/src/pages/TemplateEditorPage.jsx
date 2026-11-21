@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Image as ImageIcon, RotateCw, Trash2, Save, Check, Plus, SlidersHorizontal, Cog } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, RotateCw, Trash2, Save, Check, Plus, SlidersHorizontal, Cog, ZoomIn, ZoomOut } from "lucide-react";
 import { api, templateImageUrl } from "@/lib/api";
 import { PhotoStripRenderer } from "@/components/PhotoStripRenderer";
 
@@ -26,49 +26,6 @@ const SAMPLE_PHOTOS = [
 
 const SNAP_THRESHOLD = 8;
 
-function snapPosition(x, y, w, h, others, id, containerW, containerH) {
-  const sx = SNAP_THRESHOLD / containerW;
-  const sy = SNAP_THRESHOLD / containerH;
-  let nx = x;
-  let ny = y;
-
-  for (const other of others) {
-    if (other.id === id) continue;
-    const ox = other.x;
-    const oy = other.y;
-    const ow = other.width;
-    const oh = other.height;
-
-    if (Math.abs(nx - (ox + ow)) < sx) nx = ox + ow;
-    if (Math.abs((nx + w) - ox) < sx) nx = ox - w;
-    if (Math.abs(nx - ox) < sx) nx = ox;
-    if (Math.abs((nx + w) - (ox + ow)) < sx) nx = ox + ow - w;
-
-    if (Math.abs(ny - (oy + oh)) < sy) ny = oy + oh;
-    if (Math.abs((ny + h) - oy) < sy) ny = oy - h;
-    if (Math.abs(ny - oy) < sy) ny = oy;
-    if (Math.abs((ny + h) - (oy + oh)) < sy) ny = oy + oh - h;
-  }
-
-  return { x: clamp(nx, 0, 1 - w), y: clamp(ny, 0, 1 - h) };
-}
-
-function snapEdge(value, size, minVal, maxVal, others, id, snapPx) {
-  let v = clamp(value, minVal, maxVal);
-  for (const other of others) {
-    if (other.id === id) continue;
-    const ox = other.x;
-    const oy = other.y;
-    const ow = other.width;
-    const oh = other.height;
-    if (Math.abs(v - ox) < snapPx) v = ox;
-    if (Math.abs((v + size) - (ox + ow)) < snapPx) v = ox + ow - size;
-    if (Math.abs(v - (ox + ow)) < snapPx) v = ox + ow;
-    if (Math.abs((v + size) - ox) < snapPx) v = ox - size;
-  }
-  return clamp(v, minVal, maxVal);
-}
-
 function getClientPos(e) {
   if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
   return { x: e.clientX, y: e.clientY };
@@ -83,6 +40,7 @@ export default function TemplateEditorPage({ navigate, templateId }) {
   const [autoDetecting, setAutoDetecting] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState("");
+  const [zoom, setZoom] = useState(1);
 
   const containerRef = useRef(null);
   const dragRef = useRef(null);
@@ -157,9 +115,7 @@ export default function TemplateEditorPage({ navigate, templateId }) {
       if (!pendingFrame) {
         pendingFrame = true;
         rafRef.current = requestAnimationFrame(() => {
-          let nx = clamp(d.frameX + dx, 0, 1 - d.frameW);
-          let ny = clamp(d.frameY + dy, 0, 1 - d.frameH);
-          const snapped = snapPosition(nx, ny, d.frameW, d.frameH, frames, d.frame.id, d.containerW, d.containerH);
+          const snapped = snapPosition(d.frameX + dx, d.frameY + dy, d.frameW, d.frameH, frames, d.frame.id, d.containerW, d.containerH);
           setFrameField(d.frame.id, { x: snapped.x, y: snapped.y });
           pendingFrame = false;
         });
@@ -292,6 +248,49 @@ export default function TemplateEditorPage({ navigate, templateId }) {
       case "e": case "w": return "ew-resize";
       default: return "default";
     }
+  };
+
+  const snapPosition = (x, y, w, h, others, id, containerW, containerH) => {
+    const sx = SNAP_THRESHOLD / containerW;
+    const sy = SNAP_THRESHOLD / containerH;
+    let nx = x;
+    let ny = y;
+
+    for (const other of others) {
+      if (other.id === id) continue;
+      const ox = other.x;
+      const oy = other.y;
+      const ow = other.width;
+      const oh = other.height;
+
+      if (Math.abs(nx - (ox + ow)) < sx) nx = ox + ow;
+      if (Math.abs((nx + w) - ox) < sx) nx = ox - w;
+      if (Math.abs(nx - ox) < sx) nx = ox;
+      if (Math.abs((nx + w) - (ox + ow)) < sx) nx = ox + ow - w;
+
+      if (Math.abs(ny - (oy + oh)) < sy) ny = oy + oh;
+      if (Math.abs((ny + h) - oy) < sy) ny = oy - h;
+      if (Math.abs(ny - oy) < sy) ny = oy;
+      if (Math.abs((ny + h) - (oy + oh)) < sy) ny = oy + oh - h;
+    }
+
+    return { x: clamp(nx, 0, 1 - w), y: clamp(ny, 0, 1 - h) };
+  };
+
+  const snapEdge = (value, size, minVal, maxVal, others, id, snapPx) => {
+    let v = clamp(value, minVal, maxVal);
+    for (const other of others) {
+      if (other.id === id) continue;
+      const ox = other.x;
+      const oy = other.y;
+      const ow = other.width;
+      const oh = other.height;
+      if (Math.abs(v - ox) < snapPx) v = ox;
+      if (Math.abs((v + size) - (ox + ow)) < snapPx) v = ox + ow - size;
+      if (Math.abs(v - (ox + ow)) < snapPx) v = ox + ow;
+      if (Math.abs((v + size) - ox) < snapPx) v = ox - size;
+    }
+    return clamp(v, minVal, maxVal);
   };
 
   const addFrame = () => {
@@ -563,24 +562,30 @@ export default function TemplateEditorPage({ navigate, templateId }) {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {message && (
           <div className="mb-6 p-5 rounded-xl bg-fleur-rose/10 border border-fleur-rose/30 text-fleur-rose text-sm flex items-center gap-2 animate-slide-up">
             <RotateCw className="w-4 h-4" /> {message}
           </div>
         )}
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col items-center">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="lg:w-2/3 flex flex-col items-center">
             <div
-              className="max-w-[900px] w-full relative inline-block rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border-4 border-fleur-blush/60 bg-white overflow-visible"
+              className="relative inline-block rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border-4 border-fleur-blush/60 bg-white overflow-visible"
               ref={containerRef}
-              style={{ touchAction: "none", ...(imgAspectRatio && { aspectRatio: imgAspectRatio }) }}
+              style={{
+                touchAction: "none",
+                width: `min(900px, ${100 * zoom}%)`,
+                aspectRatio: imgAspectRatio ? imgAspectRatio : 1,
+                transform: `scale(${Math.min(zoom, 1)})`,
+                transformOrigin: "center",
+              }}
             >
               <img
                 ref={imgRef}
                 src={templateImageUrl(template.original_path)}
                 alt="Template"
-                className="block max-w-full max-h-[60vh] object-fill"
+                className="block w-full h-full object-cover"
                 onLoad={(e) => {
                   const naturalW = e.currentTarget.naturalWidth;
                   const naturalH = e.currentTarget.naturalHeight;
@@ -595,7 +600,6 @@ export default function TemplateEditorPage({ navigate, templateId }) {
               {frames.map((frame) => {
                 const isSel = selectedId === frame.id;
                 const handleSize = "w-[28px] h-[28px]";
-                const dotSize = "w-[12px] h-[12px]";
                 return (
                   <div
                     key={frame.id}
@@ -651,6 +655,13 @@ export default function TemplateEditorPage({ navigate, templateId }) {
                 <button onClick={addFrame} className="btn-soft flex items-center gap-2 text-xs text-fleur-ink/70 hover:bg-fleur-blush/80 px-4 py-2 rounded-full">
                   <Plus className="w-3 h-3" /> Add frame
                 </button>
+                <button onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))} className="btn-ghost text-xs px-3 py-1.5 rounded-full hover:bg-fleur-blush/50">
+                  <ZoomOut className="w-3 h-3" />
+                </button>
+                <span className="text-xs font-medium text-fleur-ink/60">{Math.round(zoom * 100)}%</span>
+                <button onClick={() => setZoom((z) => Math.min(2, z + 0.2))} className="btn-ghost text-xs px-3 py-1.5 rounded-full hover:bg-fleur-blush/50">
+                  <ZoomIn className="w-3 h-3" />
+                </button>
               </div>
             </div>
             <p className="mt-4 text-xs text-fleur-ink/50 text-center">
@@ -658,52 +669,54 @@ export default function TemplateEditorPage({ navigate, templateId }) {
             </p>
           </div>
 
-          <div className="card p-6 animate-slide-up">
-            <h3 className="font-semibold text-fleur-ink mb-5 flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4 text-fleur-rose" /> Frame settings
-            </h3>
-            {!selected ? (
-              <div className="text-center py-8">
-                <div className="w-12 h-12 rounded-full bg-fleur-blush/30 flex items-center justify-center text-fleur-ink/30 font-bold text-lg mb-3 mx-auto">
-                  ?
+          <div className="lg:w-1/3 flex flex-col gap-6">
+            <div className="card p-6 animate-slide-up">
+              <h3 className="font-semibold text-fleur-ink mb-5 flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-fleur-rose" /> Frame settings
+              </h3>
+              {!selected ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 rounded-full bg-fleur-blush/30 flex items-center justify-center text-fleur-ink/30 font-bold text-lg mb-3 mx-auto">
+                    ?
+                  </div>
+                  <p className="text-fleur-ink/50 text-sm">Select a frame to edit.</p>
                 </div>
-                <p className="text-fleur-ink/50 text-sm">Select a frame to edit.</p>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <div>
-                  <label className="label">Photo number</label>
-                  <select
-                    value={selected.photoNumber || 1}
-                    onChange={(e) => setFrameField(selected.id, { photoNumber: Number(e.target.value) })}
-                    className="input"
-                  >
-                    {[1, 2, 3, 4].map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
+              ) : (
+                <div className="space-y-5">
+                  <div>
+                    <label className="label">Photo number</label>
+                    <select
+                      value={selected.photoNumber || 1}
+                      onChange={(e) => setFrameField(selected.id, { photoNumber: Number(e.target.value) })}
+                      className="input"
+                    >
+                      {[1, 2, 3, 4].map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <field label="X (%)" value={pct(selected.x)} onChange={(v) => setFrameField(selected.id, { x: v / 100 })} min={0} max={100 - pct(selected.width)} />
+                    <field label="Y (%)" value={pct(selected.y)} onChange={(v) => setFrameField(selected.id, { y: v / 100 })} min={0} max={100 - pct(selected.height)} />
+                    <field label="Width (%)" value={pct(selected.width)} onChange={(v) => setFrameField(selected.id, { width: v / 100 })} min={3} max={100 - pct(selected.x)} />
+                    <field label="Height (%)" value={pct(selected.height)} onChange={(v) => setFrameField(selected.id, { height: v / 100 })} min={3} max={100 - pct(selected.y)} />
+                  </div>
+                  <button onClick={deleteFrame} className="w-full py-3 rounded-xl border border-fleur-rose/40 text-fleur-rose text-sm font-bold hover:bg-fleur-rose/5 transition-all">
+                    Remove frame
+                  </button>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <field label="X (%)" value={pct(selected.x)} onChange={(v) => setFrameField(selected.id, { x: v / 100 })} min={0} max={100 - pct(selected.width)} />
-                  <field label="Y (%)" value={pct(selected.y)} onChange={(v) => setFrameField(selected.id, { y: v / 100 })} min={0} max={100 - pct(selected.height)} />
-                  <field label="Width (%)" value={pct(selected.width)} onChange={(v) => setFrameField(selected.id, { width: v / 100 })} min={3} max={100 - pct(selected.x)} />
-                  <field label="Height (%)" value={pct(selected.height)} onChange={(v) => setFrameField(selected.id, { height: v / 100 })} min={3} max={100 - pct(selected.y)} />
-                </div>
-                <button onClick={deleteFrame} className="w-full py-3 rounded-xl border border-fleur-rose/40 text-fleur-rose text-sm font-bold hover:bg-fleur-rose/5 transition-all">
-                  Remove frame
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="card p-6 animate-slide-up delay-100">
-            <h3 className="font-semibold text-fleur-ink mb-4 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-fleur-rose" /> Preview (sample photos)
-            </h3>
-            <div className="h-64 flex items-center justify-center bg-fleur-blush rounded-[2rem] border border-fleur-blush/40 overflow-hidden relative">
-              <PhotoStripRenderer template={template} photos={SAMPLE_PHOTOS} maxDimension={400} />
+              )}
             </div>
-            <p className="text-xs text-fleur-ink/50 text-center">Preview uses placeholder colors per photo number.</p>
+
+            <div className="card p-6 animate-slide-up delay-100">
+              <h3 className="font-semibold text-fleur-ink mb-4 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-fleur-rose" /> Preview (sample photos)
+              </h3>
+              <div className="h-64 flex items-center justify-center bg-fleur-blush rounded-[2rem] border border-fleur-blush/40 overflow-hidden relative">
+                <PhotoStripRenderer template={template} photos={SAMPLE_PHOTOS} maxDimension={400} />
+              </div>
+              <p className="text-xs text-fleur-ink/50 text-center">Preview uses placeholder colors per photo number.</p>
+            </div>
           </div>
         </div>
       </div>
