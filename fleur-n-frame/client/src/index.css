@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-fleur-cream text-fleur-ink antialiased selection:bg-fleur-rose/30;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl px-6 py-3 font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.96];
+  }
+  .btn-primary {
+    @apply btn bg-fleur-rose text-white shadow-[0_4px_12px_rgba(212,165,165,0.35)] focus:ring-fleur-rose/50 active:scale-[0.96];
+  }
+  .btn-soft {
+    @apply btn bg-white text-fleur-ink border border-fleur-blush shadow-sm focus:ring-fleur-sage active:scale-[0.96];
+  }
+  .btn-outline {
+    @apply btn border border-fleur-rose text-fleur-rose bg-transparent focus:ring-fleur-rose/50 active:scale-[0.96];
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-fleur-ink/70 hover:bg-fleur-blush/50 focus:ring-fleur-sage active:scale-[0.96];
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-fleur-blush/60 overflow-hidden transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)];
+  }
+  .card-hover {
+    @apply card hover:border-fleur-rose/40 hover:bg-fleur-blush/20;
+  }
+  .floral-divider {
+    @apply relative flex items-center gap-3 text-fleur-rose text-sm font-medium uppercase tracking-widest;
+  }
+  .floral-divider::before,
+  .floral-divider::after {
+    @apply h-[1px] bg-fleur-blush flex-1 content-[''];
+  }
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/60;
+  }
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-lg border border-white/70 shadow-[0_4px_20px_rgba(0,0,0,0.04)];
+  }
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border;
+  }
+  .badge-published {
+    @apply badge bg-fleur-rose/10 text-fleur-rose border-fleur-rose/30;
+  }
+  .badge-draft {
+    @apply badge bg-fleur-blush text-fleur-ink/60 border-fleur-blush/50;
+  }
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-fleur-blush/60 bg-white text-fleur-ink focus:border-fleur-rose focus:ring-1 focus:ring-fleur-rose outline-none transition-all;
+  }
+  .label {
+    @apply block text-sm font-medium text-fleur-ink/70 mb-1.5;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
+  }
+  .animate-slide-in-right {
+    animation: slideInRight 0.5s ease-out forwards;
+  }
+  .animate-bounce-gentle {
+    animation: bounceGentle 2s infinite;
+  }
+  .animate-pulse-soft {
+    animation: pulseSoft 3s infinite;
+  }
+  .animate-flash {
+    animation: flash 0.4s ease-out;
+  }
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+  .delay-400 {
+    animation-delay: 400ms;
+  }
+  .shadow-soft {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes bounceGentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes flash {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.grid-bg {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(212, 165, 165, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(212, 165, 165, 0.08) 1px, transparent 1px);
+}
+
+.blob {
+  position: absolute;
+  filter: blur(80px);
+  opacity: 0.4;
+  z-index: 0;
+  animation: blobMove 10s infinite alternate;
+}
+
+@keyframes blobMove {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(40px, 60px) scale(1.2); }
+}
