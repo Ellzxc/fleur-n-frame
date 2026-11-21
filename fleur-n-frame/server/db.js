@@ -93,6 +93,10 @@ const db = {
   getPhotoSession(sessionId) {
     return PhotoSession.findOne({ id: sessionId }).lean().then((session) => session || null);
   },
+
+  deletePhotoSession(sessionId) {
+    return PhotoSession.findOneAndDelete({ id: sessionId }).lean().then((session) => session || null);
+  },
 };
 
 module.exports = db;

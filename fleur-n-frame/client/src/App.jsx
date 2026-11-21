@@ -22,6 +22,11 @@ function AppRoutes() {
       resetPhotos();
       setStripSessionId(null);
       setCustomerSessionId(null);
+      const sid = sessionStorage.getItem("fleur_last_session");
+      if (sid) {
+        api.deletePhotoSession(sid).catch(() => {});
+        sessionStorage.removeItem("fleur_last_session");
+      }
     }
     if (to === "admin") {
       const admin = sessionStorage.getItem("fleur_admin") === "1";

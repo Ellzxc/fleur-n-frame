@@ -31,6 +31,12 @@ app.get("/api/photos/:sessionId", (req, res) => {
     .catch((err) => res.status(500).json({ error: err.message }));
 });
 
+app.delete("/api/photos/:sessionId", (req, res) => {
+  db.deletePhotoSession(req.params.sessionId)
+    .then(() => res.json({ ok: true }))
+    .catch((err) => res.status(500).json({ error: err.message }));
+});
+
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => {

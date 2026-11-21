@@ -32,4 +32,5 @@ export const api = {
   deleteTemplate: (id) => request(`/templates/${id}`, { method: "DELETE" }),
   savePhotoSession: (sessionId, photos) => request("/photos", { method: "POST", body: JSON.stringify({ sessionId, photos }) }),
   getPhotoSession: (sessionId) => request(`/photos/${sessionId}`),
+  deletePhotoSession: (sessionId) => request(`/photos/${sessionId}`, { method: "DELETE" }),
 };
