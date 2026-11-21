@@ -146,16 +146,15 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                   }`}
                   style={{ animationDelay: `${templates.indexOf(t) * 100}ms` }}
                 >
-                  <div className="h-64 overflow-hidden relative group-hover:scale-[1.02] transition-transform duration-300">
-                    <div className="absolute inset-0 bg-fleur-blush/30 group-hover:bg-fleur-blush/50 transition-colors"></div>
-                    <div className={`relative ${filter === "bw" ? "grayscale" : filter === "vintage" ? "sepia" : ""}`}>
+                    <div className="h-64 overflow-hidden relative group-hover:scale-[1.02] transition-transform duration-300">
+                      <div className="absolute inset-0 bg-fleur-blush/30 group-hover:bg-fleur-blush/50 transition-colors"></div>
                       <PhotoStripRenderer
                         template={t}
                         photos={photos}
                         maxDimension={600}
+                        filterClass={filter === "bw" ? "grayscale" : filter === "vintage" ? "sepia" : ""}
                       />
-                    </div>
-                    <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-fleur-ink text-xs font-semibold shadow-sm border border-white/50">
+                      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-fleur-ink text-xs font-semibold shadow-sm border border-white/50">
                       <Heart className="w-3 h-3 fill-current" /> {t.frames?.length || 0} frames
                     </div>
                     {isSelected && (
@@ -193,14 +192,13 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                     <div className="absolute -top-10 left-0 flex items-center gap-2 text-xs font-bold text-fleur-ink/70 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-fleur-blush/40 shadow-sm">
                       <Image className="w-3 h-3 text-fleur-rose" /> Preview
                     </div>
-                    <div className={`relative ${filter === "bw" ? "grayscale" : filter === "vintage" ? "sepia" : ""}`}>
-                      <PhotoStripRenderer
-                        template={template}
-                        photos={photos}
-                        maxDimension={1200}
-                        onReady={handleRendererReady}
-                      />
-                    </div>
+                    <PhotoStripRenderer
+                      template={template}
+                      photos={photos}
+                      maxDimension={1200}
+                      onReady={handleRendererReady}
+                      filterClass={filter === "bw" ? "grayscale" : filter === "vintage" ? "sepia" : ""}
+                    />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all"></div>
                   </div>
                   <p className="mt-6 text-sm text-fleur-ink/60 leading-relaxed">

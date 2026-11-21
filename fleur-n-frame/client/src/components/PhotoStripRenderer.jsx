@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { templateImageUrl } from "@/lib/api";
 
-export function PhotoStripRenderer({ template, photos, maxDimension, onReady }) {
+export function PhotoStripRenderer({ template, photos, maxDimension, onReady, filterClass }) {
   const canvasRef = useRef(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [ready, setReady] = useState(false);
@@ -69,7 +69,7 @@ export function PhotoStripRenderer({ template, photos, maxDimension, onReady }) 
   return (
     <canvas
       ref={canvasRef}
-      className="block rounded-xl shadow-soft bg-white border border-fleur-blush/40"
+      className={`block rounded-xl shadow-soft bg-white border border-fleur-blush/40 ${filterClass || ""}`}
       style={{ maxWidth: "100%", height: "auto", display: "block" }}
     />
   );
