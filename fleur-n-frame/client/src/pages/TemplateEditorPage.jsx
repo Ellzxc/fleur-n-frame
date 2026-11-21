@@ -585,7 +585,7 @@ export default function TemplateEditorPage({ navigate, templateId }) {
                 ref={imgRef}
                 src={templateImageUrl(template.original_path)}
                 alt="Template"
-                className="block w-full h-full object-cover"
+                className="block w-full h-full object-fill"
                 onLoad={(e) => {
                   const naturalW = e.currentTarget.naturalWidth;
                   const naturalH = e.currentTarget.naturalHeight;
