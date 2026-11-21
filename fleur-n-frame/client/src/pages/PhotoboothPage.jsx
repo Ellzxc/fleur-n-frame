@@ -139,7 +139,7 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Main camera area */}
         {!previewOpen && (
-          <div className="flex flex-col items-center justify-center flex-1 z-0 relative w-full max-w-full p-6 lg:p-8">
+          <div className="flex flex-col items-center justify-center flex-1 z-0 relative w-full max-w-full p-4 lg:p-8">
             <div className="w-full max-w-[900px] aspect-video relative rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden">
               {cameraEnabled ? (
                 <>
@@ -162,30 +162,32 @@ export default function PhotoboothPage({ navigate }) {
               )}
             </div>
 
-            {/* Photo thumbnails - right side */}
-            <div className="absolute right-6 top-24 z-20 flex flex-col gap-3 w-48">
-              <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 ml-1">Captured</div>
-              {Array.from({ length: TOTAL }).map((_, i) => (
-                <div key={i} className="relative cursor-pointer group flex flex-col items-center gap-2" onClick={() => photos[i] && openPreview(i)}>
-                  <div className={`w-24 h-24 rounded-2xl overflow-hidden border shadow-sm flex items-center justify-center relative transition-all duration-300 ${
-                    photos[i]
-                      ? "border-fleur-rose/60 bg-white shadow-[0_4px_12px_rgba(212,165,165,0.25)] scale-105"
-                      : "border-2 border-dashed border-fleur-blush/40 bg-fleur-blush/40"
-                  }`}>
-                    {photos[i] ? (
-                      <img src={photos[i]} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-fleur-ink/30">
-                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-fleur-ink/20 mb-1" />
-                        <span className="text-[10px] font-medium opacity-60">{i + 1}</span>
+            {/* Photo thumbnails - below camera on mobile, side on desktop */}
+            <div className="mt-6 flex flex-col lg:flex-row lg:items-start gap-4">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-2">Captured</div>
+              <div className="flex flex-wrap justify-center gap-3">
+                {Array.from({ length: TOTAL }).map((_, i) => (
+                  <div key={i} className="relative cursor-pointer group flex flex-col items-center gap-2" onClick={() => photos[i] && openPreview(i)}>
+                    <div className={`w-24 h-24 rounded-2xl overflow-hidden border shadow-sm flex items-center justify-center relative transition-all duration-300 ${
+                      photos[i]
+                        ? "border-fleur-rose/60 bg-white shadow-[0_4px_12px_rgba(212,165,165,0.25)] scale-105"
+                        : "border-2 border-dashed border-fleur-blush/40 bg-fleur-blush/40"
+                    }`}>
+                      {photos[i] ? (
+                        <img src={photos[i]} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-fleur-ink/30">
+                          <div className="w-10 h-10 rounded-full border-2 border-dashed border-fleur-ink/20 mb-1" />
+                          <span className="text-[10px] font-medium opacity-60">{i + 1}</span>
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-fleur-rose font-bold text-[10px] shadow-sm border border-white">
+                        Photo {i + 1}
                       </div>
-                    )}
-                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-fleur-rose font-bold text-[10px] shadow-sm border border-white">
-                      Photo {i + 1}
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
