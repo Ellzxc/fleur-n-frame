@@ -7,7 +7,8 @@ const db = require("./db");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN || "*";
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/api/uploads", express.static(path.join(__dirname, "uploads")));
