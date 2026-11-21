@@ -26,8 +26,6 @@ const SAMPLE_PHOTOS = [
 
 const SNAP_THRESHOLD = 8;
 
-const rafRef = useRef(null);
-
 function snapPosition(x, y, w, h, others, id, containerW, containerH) {
   const sx = SNAP_THRESHOLD / containerW;
   const sy = SNAP_THRESHOLD / containerH;
@@ -89,6 +87,7 @@ export default function TemplateEditorPage({ navigate, templateId }) {
   const containerRef = useRef(null);
   const dragRef = useRef(null);
   const resizeRef = useRef(null);
+  const rafRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
