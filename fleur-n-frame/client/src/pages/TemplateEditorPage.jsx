@@ -471,7 +471,7 @@ export default function TemplateEditorPage({ navigate, templateId }) {
                       width: `${frame.width * 100}%`,
                       height: `${frame.height * 100}%`,
                     }}
-                    className={`absolute z-20 rounded-xl pointer-events-auto transition-all duration-200 ${
+                    className={`absolute z-20 pointer-events-auto transition-all duration-200 ${
                       isSel
                         ? "ring-2 ring-fleur-rose ring-offset-1 shadow-[0_0_0_3px_rgba(212,165,165,0.4)] bg-white/60 border-fleur-rose/80"
                         : "border-2 border-fleur-rose/30 bg-white/50 shadow-sm"
