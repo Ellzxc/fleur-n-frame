@@ -40,10 +40,13 @@ router.post("/", upload.single("template"), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No template file uploaded" });
     const name = req.body.name || req.file.originalname;
 
-    const uploadResp = await cloudinary.uploader.upload(req.file.buffer, {
-      folder: "fleur-n-frame/templates",
-      resource_type: "image",
-    });
+    const uploadResp = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+      {
+        folder: "fleur-n-frame/templates",
+        resource_type: "image",
+      }
+    );
 
     const originalPath = uploadResp.secure_url;
     const template = await db.createTemplate({
