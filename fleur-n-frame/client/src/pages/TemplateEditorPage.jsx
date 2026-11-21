@@ -33,6 +33,8 @@ export default function TemplateEditorPage({ navigate, templateId }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [autoDetecting, setAutoDetecting] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
 
   const containerRef = useRef(null);
   const dragRef = useRef(null);
@@ -401,6 +403,19 @@ export default function TemplateEditorPage({ navigate, templateId }) {
     }
   };
 
+  const handleRename = async () => {
+    if (!editNameValue.trim()) return;
+    try {
+      await api.updateTemplate(template.id, { name: editNameValue.trim() });
+      setEditingName(false);
+      setEditNameValue("");
+      setMessage("Template name updated.");
+      setTimeout(() => setMessage(null), 2500);
+    } catch (err) {
+      setMessage(err.message);
+    }
+  };
+
   const selected = frames.find((f) => f.id === selectedId) || null;
   const pct = (v) => Math.round((v || 0) * 100);
   const isDragging = dragRef.current?.active || false;
@@ -427,7 +442,32 @@ export default function TemplateEditorPage({ navigate, templateId }) {
             <ArrowLeft className="w-4 h-4" /> Back to admin
           </button>
           <div className="flex items-center gap-3 ml-auto">
-            <span className="text-xs font-bold text-fleur-ink/50 uppercase tracking-widest hidden md:block">{template.name}</span>
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  value={editNameValue}
+                  onChange={(e) => setEditNameValue(e.target.value)}
+                  autoFocus
+                  className="input text-sm border-fleur-rose/50 focus:border-fleur-rose max-w-[200px]"
+                />
+                <button
+                  onClick={handleRename}
+                  className="btn-soft px-3 py-1.5 text-xs text-fleur-rose border-fleur-rose/40 hover:bg-fleur-rose/10 flex items-center gap-1"
+                >
+                  <Save className="w-3 h-3" /> Save
+                </button>
+                <button
+                  onClick={() => { setEditingName(false); setEditNameValue(""); }}
+                  className="btn-ghost px-3 py-1.5 text-xs text-fleur-ink/50 hover:bg-fleur-blush/50"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 cursor-pointer text-xs font-bold text-fleur-ink/50 uppercase tracking-widest hidden md:block hover:text-fleur-ink/80" onClick={() => { setEditNameValue(template.name); setEditingName(true); }}>
+                {template.name}
+              </div>
+            )}
             <button onClick={() => handleSave(true)} disabled={saving} className="btn-primary px-7 py-3 flex items-center gap-2 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]">
               <Check className="w-4 h-4" /> {saving ? "Publishing…" : "Save & Publish"}
             </button>

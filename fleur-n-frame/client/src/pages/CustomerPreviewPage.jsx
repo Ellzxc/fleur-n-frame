@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Image, RefreshCw, ChevronLeft, QrCode, Download, X as XIcon } from "lucide-react";
+import { Image, RefreshCw, ChevronLeft, Download, X as XIcon } from "lucide-react";
 import { PhotoStripRenderer } from "@/components/PhotoStripRenderer";
 import { api } from "@/lib/api";
 
@@ -49,7 +49,7 @@ export default function CustomerPreviewPage({ navigate }) {
     return (
       <div className="min-h-screen bg-fleur-cream flex items-center justify-center px-6 animate-fade-in">
         <div className="card p-10 text-center max-w-md w-full">
-          <QrCode className="mx-auto w-16 h-16 text-black mb-6" />
+          <Image className="mx-auto w-16 h-14 text-fleur-rose mb-6" />
           <h2 className="font-display font-bold text-2xl text-fleur-ink mb-3">{error}</h2>
           <button onClick={() => navigate("welcome")} className="btn-primary w-full">
             Back to start
@@ -63,7 +63,7 @@ export default function CustomerPreviewPage({ navigate }) {
     return (
       <div className="min-h-screen bg-fleur-cream flex items-center justify-center animate-fade-in">
         <div className="text-center">
-          <QrCode className="mx-auto w-16 h-16 text-black mb-6 animate-spin" />
+          <Image className="mx-auto w-16 h-14 text-fleur-rose mb-6" />
           <p className="text-fleur-ink/50 text-sm">Loading your photos…</p>
         </div>
       </div>
@@ -148,25 +148,6 @@ export default function CustomerPreviewPage({ navigate }) {
                 <span className="bg-fleur-ink/90 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">Photo {expandedIndex + 1}</span>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* QR Code display for re-scanning */}
-        {sessionId && allTaken && (
-          <div className="mt-12 card p-8 text-center animate-slide-up delay-400">
-            <h3 className="font-display font-bold text-lg text-fleur-ink mb-4">Rescan to access again</h3>
-            <div className="flex justify-center mb-6">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-fleur-blush/40 flex flex-col items-center">
-                <QrCode className="w-40 h-40 text-black mb-4" />
-                <div className="text-xs font-mono text-fleur-ink/60 break-all max-w-xs mb-4">
-                  {window.location.origin}{window.location.pathname}?session={sessionId}
-                </div>
-                <button onClick={() => navigate("customer", sessionId)} className="btn-primary w-full py-3">
-                  View on this device
-                </button>
-              </div>
-            </div>
-            <p className="text-fleur-ink/50 text-sm">Scan this QR code to view your photos anytime.</p>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Download, Image, RefreshCw, Heart, FileText, QrCode, ChevronLeft, CheckCircle } from "lucide-react";
+import { Download, Image, RefreshCw, Heart, FileText, ChevronLeft, CheckCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { usePhotos } from "@/context/PhotoContext";
 import { PhotoStripRenderer } from "@/components/PhotoStripRenderer";
@@ -13,7 +13,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   const [ready, setReady] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
-  const [showQRCode, setShowQRCode] = useState(false);
   const [sessionId, setSessionId] = useState(passedSessionId || null);
 
   const load = useCallback(async () => {
@@ -69,17 +68,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
     link.click();
     document.body.removeChild(link);
   }, [previewUrl]);
-
-  const generateQRCode = useCallback(async () => {
-    try {
-      const id = sessionId || Math.random().toString(36).substring(2, 12);
-      await api.savePhotoSession(id, photos);
-      setSessionId(id);
-      setShowQRCode(true);
-    } catch (err) {
-      setError(err.message || "Failed to save session");
-    }
-  }, [photos, sessionId]);
 
   const allTaken = photos.every(Boolean);
 
@@ -214,14 +202,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                       Save as Image
                     </button>
                     <button
-                      onClick={generateQRCode}
-                      disabled={!allTaken}
-                      className="btn-soft w-full py-5 flex items-center justify-center gap-3 text-lg border border-fleur-rose text-fleur-rose hover:bg-fleur-rose/5 hover:text-fleur-rose/90"
-                    >
-                      <QrCode className="w-5 h-5 text-black" />
-                      Get QR Code for Customers
-                    </button>
-                    <button
                       onClick={() => setSelectedId(null)}
                       className="btn-ghost w-full py-3 text-sm flex items-center justify-center gap-2 hover:bg-fleur-blush/50"
                     >
@@ -234,26 +214,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
           )}
         </div>
       </div>
-
-      {/* QR Code screen */}
-      {showQRCode && sessionId && (
-        <div className="min-h-screen bg-fleur-cream flex flex-col items-center justify-center p-8 animate-fade-in">
-          <div className="text-center max-w-md">
-            <h2 className="font-display font-bold text-3xl text-fleur-ink mb-4">Customer Access QR Code</h2>
-            <p className="text-fleur-ink/60 mb-10">Customers scan this to view their photos</p>
-            <div className="bg-white p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-fleur-blush/40 inline-block">
-              <QrCode className="w-64 h-64 text-black mb-6" />
-              <div className="text-xs font-mono text-fleur-ink/60 break-all max-w-xs mb-8">
-                {window.location.origin}/customer?session={sessionId}
-              </div>
-              <button onClick={() => navigate("customer", sessionId)} className="btn-primary w-full py-4">
-                View on this device
-              </button>
-            </div>
-            <p className="text-xs text-fleur-ink/40 mt-6">Photos stored securely. Scan with any phone to access your strip.</p>
-          </div>
-        </div>
-      )}
     </>
   );
 }

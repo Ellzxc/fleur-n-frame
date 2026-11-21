@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Upload, Image, Trash2, Eye, RotateCw, RefreshCw, Cog, ChevronLeft, LogOut } from "lucide-react";
+import { Upload, Image, Trash2, Eye, RotateCw, RefreshCw, Cog, ChevronLeft, LogOut, Edit2 } from "lucide-react";
 import { api } from "@/lib/api";
 
 export default function AdminDashboard({ navigate }) {
@@ -9,6 +9,8 @@ export default function AdminDashboard({ navigate }) {
   const [name, setName] = useState("");
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState(null);
+  const [editingNameId, setEditingNameId] = useState(null);
+  const [editNameValue, setEditNameValue] = useState("");
   const fileInputRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -66,6 +68,19 @@ export default function AdminDashboard({ navigate }) {
       await api.deleteTemplate(id);
       await load();
       setMessage("Template deleted.");
+    } catch (err) {
+      setMessage(err.message);
+    }
+  };
+
+  const handleRename = async (id) => {
+    if (!editNameValue.trim()) return;
+    try {
+      await api.updateTemplate(id, { name: editNameValue.trim() });
+      setEditingNameId(null);
+      setEditNameValue("");
+      await load();
+      setMessage("Template name updated.");
     } catch (err) {
       setMessage(err.message);
     }
@@ -186,8 +201,33 @@ export default function AdminDashboard({ navigate }) {
                             {t.frames?.length || 0}
                           </div>
                           <div>
-                            <div className="font-medium text-fleur-ink">{t.name}</div>
-                            <div className="text-xs text-fleur-ink/40">{t.filename}</div>
+                            {editingNameId === t.id ? (
+                              <div className="flex gap-2">
+                                <input
+                                  value={editNameValue}
+                                  onChange={(e) => setEditNameValue(e.target.value)}
+                                  autoFocus
+                                  className="input text-sm border-fleur-rose/50 focus:border-fleur-rose"
+                                />
+                                <button
+                                  onClick={() => handleRename(t.id)}
+                                  className="btn-soft px-3 py-1.5 text-xs text-fleur-rose border-fleur-rose/40 hover:bg-fleur-rose/10 flex items-center gap-1"
+                                >
+                                  <Edit2 className="w-3 h-3" /> Save
+                                </button>
+                                <button
+                                  onClick={() => { setEditingNameId(null); setEditNameValue(""); }}
+                                  className="btn-ghost px-3 py-1.5 text-xs text-fleur-ink/50 hover:bg-fleur-blush/50"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="font-medium text-fleur-ink">{t.name}</div>
+                                <div className="text-xs text-fleur-ink/40">{t.filename}</div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -207,6 +247,12 @@ export default function AdminDashboard({ navigate }) {
                         )}
                         <button onClick={() => handleDelete(t.id, t.filename)} className="mt-2 btn-ghost text-xs text-fleur-rose/70 hover:bg-fleur-rose/10">
                           <Trash2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => { setEditNameValue(t.name); setEditingNameId(t.id); }}
+                          className="mt-2 btn-ghost text-xs text-fleur-ink/80 hover:bg-fleur-blush/50 flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3 h-3" /> Rename
                         </button>
                       </td>
                     </tr>
