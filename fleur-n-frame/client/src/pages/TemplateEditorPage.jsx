@@ -26,6 +26,11 @@ const SAMPLE_PHOTOS = [
 
 const SNAP_THRESHOLD = 8;
 
+function getClientPos(e) {
+  if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
 export default function TemplateEditorPage({ navigate, templateId }) {
   const [template, setTemplate] = useState(null);
   const [frames, setFrames] = useState([]);
@@ -39,7 +44,6 @@ export default function TemplateEditorPage({ navigate, templateId }) {
   const containerRef = useRef(null);
   const dragRef = useRef(null);
   const resizeRef = useRef(null);
-  const imgRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,12 +82,13 @@ export default function TemplateEditorPage({ navigate, templateId }) {
     e.preventDefault();
     e.stopPropagation();
     setSelectedId(frame.id);
+    const pos = getClientPos(e);
     const r = containerRect();
     dragRef.current = {
       active: true,
       frame,
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: pos.x,
+      startY: pos.y,
       frameX: frame.x,
       frameY: frame.y,
       frameW: frame.width,
@@ -96,8 +101,9 @@ export default function TemplateEditorPage({ navigate, templateId }) {
     const onMove = (ev) => {
       const d = dragRef.current;
       if (!d || !d.active) return;
-      const dx = (ev.clientX - d.startX) / d.containerW;
-      const dy = (ev.clientY - d.startY) / d.containerH;
+      const p = getClientPos(ev);
+      const dx = (p.x - d.startX) / d.containerW;
+      const dy = (p.y - d.startY) / d.containerH;
       let nx = clamp(d.frameX + dx, 0, 1 - d.frameW);
       let ny = clamp(d.frameY + dy, 0, 1 - d.frameH);
 
@@ -129,23 +135,28 @@ export default function TemplateEditorPage({ navigate, templateId }) {
       document.body.style.cursor = "";
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onEnd);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
       if (dragRef.current) dragRef.current.active = false;
     };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onEnd);
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onEnd);
   };
 
   const startResize = (e, frame, handle) => {
     e.preventDefault();
     e.stopPropagation();
     setSelectedId(frame.id);
+    const pos = getClientPos(e);
     const r = containerRect();
     resizeRef.current = {
       active: true,
       frame,
       handle,
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: pos.x,
+      startY: pos.y,
       frameX: frame.x,
       frameY: frame.y,
       frameW: frame.width,
@@ -158,8 +169,9 @@ export default function TemplateEditorPage({ navigate, templateId }) {
     const onMove = (ev) => {
       const d = resizeRef.current;
       if (!d || !d.active) return;
-      const dx = (ev.clientX - d.startX) / d.containerW;
-      const dy = (ev.clientY - d.startY) / d.containerH;
+      const p = getClientPos(ev);
+      const dx = (p.x - d.startX) / d.containerW;
+      const dy = (p.y - d.startY) / d.containerH;
       const minW = 0.03;
       const minH = 0.03;
 
@@ -193,10 +205,14 @@ export default function TemplateEditorPage({ navigate, templateId }) {
       document.body.style.cursor = "";
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onEnd);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
       if (resizeRef.current) resizeRef.current.active = false;
     };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onEnd);
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onEnd);
   };
 
   const resizeCursor = (handle) => {
@@ -436,19 +452,19 @@ export default function TemplateEditorPage({ navigate, templateId }) {
 
   return (
     <div className="min-h-screen bg-fleur-cream">
-      <div className="px-6 py-4 border-b border-fleur-blush/60 bg-white/70 backdrop-blur-lg sticky top-0 z-20 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-fleur-blush/60 bg-white/70 backdrop-blur-lg sticky top-0 z-20 shadow-sm">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3 flex-wrap">
           <button onClick={() => navigate("admin")} className="btn-ghost flex items-center gap-2 text-fleur-ink/70 hover:bg-fleur-blush/50 text-sm">
             <ArrowLeft className="w-4 h-4" /> Back to admin
           </button>
-          <div className="flex items-center gap-3 ml-auto">
+          <div className="flex items-center gap-2 ml-auto flex-wrap">
             {editingName ? (
               <div className="flex items-center gap-2">
                 <input
                   value={editNameValue}
                   onChange={(e) => setEditNameValue(e.target.value)}
                   autoFocus
-                  className="input text-sm border-fleur-rose/50 focus:border-fleur-rose max-w-[200px]"
+                  className="input text-sm border-fleur-rose/50 focus:border-fleur-rose max-w-[160px]"
                 />
                 <button
                   onClick={handleRename}
@@ -464,47 +480,50 @@ export default function TemplateEditorPage({ navigate, templateId }) {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 cursor-pointer text-xs font-bold text-fleur-ink/50 uppercase tracking-widest hidden md:block hover:text-fleur-ink/80" onClick={() => { setEditNameValue(template.name); setEditingName(true); }}>
+              <div className="flex items-center gap-2 cursor-pointer text-xs font-bold text-fleur-ink/50 hover:text-fleur-ink/80" onClick={() => { setEditNameValue(template.name); setEditingName(true); }}>
                 {template.name}
               </div>
             )}
-            <button onClick={() => handleSave(true)} disabled={saving} className="btn-primary px-7 py-3 flex items-center gap-2 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]">
+            <button onClick={() => handleSave(true)} disabled={saving} className="btn-primary px-6 py-3 text-sm flex items-center gap-2 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]">
               <Check className="w-4 h-4" /> {saving ? "Publishing…" : "Save & Publish"}
             </button>
-            <button onClick={() => handleSave(false)} className="btn-soft px-7 py-3 flex items-center gap-2 hover:bg-fleur-blush/80">
-              <Save className="w-4 h-4" /> Save draft
+            <button onClick={() => handleSave(false)} className="btn-soft px-6 py-3 text-sm flex items-center gap-2 hover:bg-fleur-blush/80">
+              <Save className="w-4 h-4" /> Draft
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {message && (
-          <div className="mb-8 p-5 rounded-xl bg-fleur-rose/10 border border-fleur-rose/30 text-fleur-rose text-sm flex items-center gap-2 animate-slide-up">
+          <div className="mb-6 p-5 rounded-xl bg-fleur-rose/10 border border-fleur-rose/30 text-fleur-rose text-sm flex items-center gap-2 animate-slide-up">
             <RotateCw className="w-4 h-4" /> {message}
           </div>
         )}
-        <div className="flex flex-col lg:flex-row gap-10">
-          <div className="lg:w-2/3 flex flex-col items-center">
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col items-center">
             <div
-              className="max-w-[900px] relative inline-block rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border-4 border-fleur-blush/60 bg-white overflow-visible"
+              className="max-w-[900px] w-full relative inline-block rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border-4 border-fleur-blush/60 bg-white overflow-visible"
               ref={containerRef}
               style={{ touchAction: "none" }}
             >
               <img
                 src={templateImageUrl(template.original_path)}
                 alt="Template"
-                className="block max-w-[900px] max-h-[70vh] object-contain"
+                className="block max-w-full max-h-[60vh] object-contain"
                 onError={(e) => {
                   e.currentTarget.src = template.original_path;
                 }}
               />
               {frames.map((frame) => {
                 const isSel = selectedId === frame.id;
+                const handleSize = "w-[28px] h-[28px]";
+                const dotSize = "w-[12px] h-[12px]";
                 return (
                   <div
                     key={frame.id}
                     onMouseDown={(e) => startDrag(e, frame)}
+                    onTouchStart={(e) => startDrag(e, frame)}
                     style={{
                       left: `${frame.x * 100}%`,
                       top: `${frame.y * 100}%`,
@@ -526,12 +545,13 @@ export default function TemplateEditorPage({ navigate, templateId }) {
                         <div
                           key={handle}
                           onMouseDownCapture={(e) => startResize(e, frame, handle)}
+                          onTouchStartCapture={(e) => startResize(e, frame, handle)}
                           style={{ ...pos }}
-                          className={`absolute z-50 w-[20px] h-[20px] rounded-full bg-transparent cursor-pointer`}
+                          className={`absolute z-50 ${handleSize} rounded-full bg-transparent cursor-pointer`}
                         >
                           <div className="absolute inset-0 flex items-center justify-center" style={{ pointerEvents: "none" }}>
                             <div
-                              className={`w-[8px] h-[8px] rounded-full bg-fleur-rose border-2 border-white shadow-sm ${
+                              className={`w-[10px] h-[10px] rounded-full bg-fleur-rose border-2 border-white shadow-sm ${
                                 isSel ? "ring-1 ring-white" : ""
                               }`}
                             />
@@ -557,58 +577,56 @@ export default function TemplateEditorPage({ navigate, templateId }) {
               </div>
             </div>
             <p className="mt-4 text-xs text-fleur-ink/50 text-center">
-              {isResizing ? "Resizing frame…" : isDragging ? "Dragging frame… (auto-aligns to other frames)" : "Drag frames to move • Drag small rose handles to resize"}
+              {isResizing ? "Resizing frame…" : isDragging ? "Dragging frame… (auto-aligns)" : "Drag frames to move • Drag rose handles to resize"}
             </p>
           </div>
 
-          <div className="lg:w-1/3 flex flex-col gap-6">
-            <div className="card p-6 animate-slide-up">
-              <h3 className="font-semibold text-fleur-ink mb-5 flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-fleur-rose" /> Frame settings
-              </h3>
-              {!selected ? (
-                <div className="text-center py-8">
-                  <div className="w-12 h-12 rounded-full bg-fleur-blush/30 flex items-center justify-center text-fleur-ink/30 font-bold text-lg mb-3 mx-auto">
-                    ?
-                  </div>
-                  <p className="text-fleur-ink/50 text-sm">Select a frame to edit.</p>
+          <div className="card p-6 animate-slide-up">
+            <h3 className="font-semibold text-fleur-ink mb-5 flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4 text-fleur-rose" /> Frame settings
+            </h3>
+            {!selected ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 rounded-full bg-fleur-blush/30 flex items-center justify-center text-fleur-ink/30 font-bold text-lg mb-3 mx-auto">
+                  ?
                 </div>
-              ) : (
-                <div className="space-y-5">
-                  <div>
-                    <label className="label">Photo number</label>
-                    <select
-                      value={selected.photoNumber || 1}
-                      onChange={(e) => setFrameField(selected.id, { photoNumber: Number(e.target.value) })}
-                      className="input"
-                    >
-                      {[1, 2, 3, 4].map((n) => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <field label="X (%)" value={pct(selected.x)} onChange={(v) => setFrameField(selected.id, { x: v / 100 })} min={0} max={100 - pct(selected.width)} />
-                    <field label="Y (%)" value={pct(selected.y)} onChange={(v) => setFrameField(selected.id, { y: v / 100 })} min={0} max={100 - pct(selected.height)} />
-                    <field label="Width (%)" value={pct(selected.width)} onChange={(v) => setFrameField(selected.id, { width: v / 100 })} min={3} max={100 - pct(selected.x)} />
-                    <field label="Height (%)" value={pct(selected.height)} onChange={(v) => setFrameField(selected.id, { height: v / 100 })} min={3} max={100 - pct(selected.y)} />
-                  </div>
-                  <button onClick={deleteFrame} className="w-full py-3 rounded-xl border border-fleur-rose/40 text-fleur-rose text-sm font-bold hover:bg-fleur-rose/5 transition-all">
-                    Remove frame
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="card p-6 animate-slide-up delay-100">
-              <h3 className="font-semibold text-fleur-ink mb-4 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-fleur-rose" /> Preview (sample photos)
-              </h3>
-              <div className="h-64 flex items-center justify-center bg-fleur-blush rounded-[2rem] border border-fleur-blush/40 overflow-hidden relative">
-                <PhotoStripRenderer template={template} photos={SAMPLE_PHOTOS} maxDimension={400} />
+                <p className="text-fleur-ink/50 text-sm">Select a frame to edit.</p>
               </div>
-              <p className="text-xs text-fleur-ink/50 text-center">Preview uses placeholder colors per photo number.</p>
+            ) : (
+              <div className="space-y-5">
+                <div>
+                  <label className="label">Photo number</label>
+                  <select
+                    value={selected.photoNumber || 1}
+                    onChange={(e) => setFrameField(selected.id, { photoNumber: Number(e.target.value) })}
+                    className="input"
+                  >
+                    {[1, 2, 3, 4].map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <field label="X (%)" value={pct(selected.x)} onChange={(v) => setFrameField(selected.id, { x: v / 100 })} min={0} max={100 - pct(selected.width)} />
+                  <field label="Y (%)" value={pct(selected.y)} onChange={(v) => setFrameField(selected.id, { y: v / 100 })} min={0} max={100 - pct(selected.height)} />
+                  <field label="Width (%)" value={pct(selected.width)} onChange={(v) => setFrameField(selected.id, { width: v / 100 })} min={3} max={100 - pct(selected.x)} />
+                  <field label="Height (%)" value={pct(selected.height)} onChange={(v) => setFrameField(selected.id, { height: v / 100 })} min={3} max={100 - pct(selected.y)} />
+                </div>
+                <button onClick={deleteFrame} className="w-full py-3 rounded-xl border border-fleur-rose/40 text-fleur-rose text-sm font-bold hover:bg-fleur-rose/5 transition-all">
+                  Remove frame
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="card p-6 animate-slide-up delay-100">
+            <h3 className="font-semibold text-fleur-ink mb-4 flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-fleur-rose" /> Preview (sample photos)
+            </h3>
+            <div className="h-64 flex items-center justify-center bg-fleur-blush rounded-[2rem] border border-fleur-blush/40 overflow-hidden relative">
+              <PhotoStripRenderer template={template} photos={SAMPLE_PHOTOS} maxDimension={400} />
             </div>
+            <p className="text-xs text-fleur-ink/50 text-center">Preview uses placeholder colors per photo number.</p>
           </div>
         </div>
       </div>
@@ -637,7 +655,7 @@ function field({ label, value, onChange, min, max }) {
 }
 
 function handlePos(handle) {
-  const s = -10;
+  const s = -14;
   const base = { position: "absolute", zIndex: 50, touchAction: "none" };
   switch (handle) {
     case "nw": return { ...base, top: s, left: s };
