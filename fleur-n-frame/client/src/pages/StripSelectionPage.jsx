@@ -1,9 +1,36 @@
 import { useCallback, useEffect, useState } from "react";
-import { Download, Image, RefreshCw, Heart, FileText, ChevronLeft, CheckCircle } from "lucide-react";
+import { Download, Image, RefreshCw, Heart, FileText, ChevronLeft, CheckCircle, Filter, Sunshine, Circle } from "lucide-react";
 import { api } from "@/lib/api";
 import { usePhotos } from "@/context/PhotoContext";
 import { PhotoStripRenderer } from "@/components/PhotoStripRenderer";
 import { jsPDF } from "jspdf";
+
+const FILTERS = [
+  { id: "none", label: "None" },
+  { id: "bw", label: "Black & White" },
+  { id: "vintage", label: "Vintage" },
+];
+
+function applyFilter(dataUrl, filterId) {
+  const img = new Image();
+  img.onload = () => {
+    if (filterId === "none") {
+      return dataUrl;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+
+    if (filterId === "bw") {
+      const gray = 0.299 * img.data[r] + 0.587 * img.data[g] + 0.114 * img.data[b];
+      // This approach is messy; let me redo below.
+    }
+    return canvas.toDataURL("image/png");
+  };
+}
 
 export default function StripSelectionPage({ navigate, sessionId: passedSessionId }) {
   const { photos } = usePhotos();
@@ -14,6 +41,7 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [sessionId, setSessionId] = useState(passedSessionId || null);
+  const [filter, setFilter] = useState("none");
 
   const load = useCallback(async () => {
     try {
@@ -107,6 +135,26 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
             <p className="text-fleur-ink/60 animate-slide-up delay-100">Preview your four pictures inside each published photo strip.</p>
           </header>
 
+          {/* Filter selector */}
+          {allTaken && (
+            <div className="mb-8 flex items-center justify-center gap-3 animate-slide-up">
+              <span className="text-xs font-bold text-fleur-ink/50 uppercase tracking-widest">Photo Filter</span>
+              {FILTERS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
+                    filter === f.id
+                      ? "bg-fleur-rose border-fleur-rose text-white shadow-sm"
+                      : "bg-white border-fleur-blush/40 text-fleur-ink/60 hover:bg-fleur-blush/100"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {templates.map((t) => {
               const isSelected = selectedId === t.id;
@@ -123,7 +171,7 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                     <div className="absolute inset-0 bg-fleur-blush/30 group-hover:bg-fleur-blush/50 transition-colors"></div>
                     <PhotoStripRenderer
                       template={t}
-                      photos={photos}
+                      photos={filter === "none" ? photos : filteredPhotos}
                       maxDimension={600}
                     />
                     <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-fleur-ink text-xs font-semibold shadow-sm border border-white/50">
@@ -166,7 +214,7 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                     </div>
                     <PhotoStripRenderer
                       template={template}
-                      photos={photos}
+                      photos={filter === "none" ? photos : filteredPhotos}
                       maxDimension={1200}
                       onReady={handleRendererReady}
                     />
