@@ -12,55 +12,61 @@ const FILTERS = [
 ];
 
 function applyFilter(dataUrl, filterId) {
-  const img = new Image();
-  img.onload = () => {
-    if (filterId === "none") {
-      return dataUrl;
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-
-    if (filterId === "bw") {
-      const w = img.naturalWidth;
-      const h = img.naturalHeight;
-      const data = img.data;
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const idx = (y * w + x) * 4;
-          const r = data[idx];
-          const g = data[idx + 1];
-          const b = data[idx + 2];
-          const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-          ctx.putImageData({ data: new Uint8ClampedArray([gray, gray, gray]), width: canvas.width, height: canvas.height }, 0, 0);
-        }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      if (filterId === "none") {
+        resolve(dataUrl);
+        return;
       }
-    } else if (filterId === "vintage") {
-      const w = img.naturalWidth;
-      const h = img.naturalHeight;
-      const data = img.data;
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const idx = (y * w + x) * 4;
-          const r = data[idx];
-          const g = data[idx + 1];
-          const b = data[idx + 2];
-          const tr = Math.min(255, r * 1.1 + g * 0.1 + b * 0.1);
-          const tg = Math.min(255, r * 0.1 + g * 1.0 + b * 0.1);
-          const tb = Math.min(255, r * 0.1 + g * 0.1 + b * 1.0);
-          ctx.putImageData({ data: new Uint8ClampedArray([tr, tg, tb]), width: canvas.width, height: canvas.height }, 0, 0);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      if (filterId === "bw") {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        const data = ctx.getImageData(0, 0, w, h).data;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+            data[idx] = gray;
+            data[idx + 1] = gray;
+            data[idx + 2] = gray;
+          }
         }
+        ctx.putImageData(ctx.getImageData(0, 0, w, h), 0, 0);
+      } else if (filterId === "vintage") {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        const data = ctx.getImageData(0, 0, w, h).data;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            const tr = Math.min(255, r * 1.1 + g * 0.1 + b * 0.1);
+            const tg = Math.min(255, r * 0.1 + g * 1.0 + b * 0.1);
+            const tb = Math.min(255, r * 0.1 + g * 0.1 + b * 1.0);
+            data[idx] = tr;
+            data[idx + 1] = tg;
+            data[idx + 2] = tb;
+          }
+        }
+        ctx.putImageData(ctx.getImageData(0, 0, w, h), 0, 0);
       }
-    }
-
-    return canvas.toDataURL("image/png");
-  };
-
-  img.src = dataUrl;
-  return new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.src = dataUrl;
+    img.onerror = () => resolve(dataUrl);
+  });
 }
 
 export default function StripSelectionPage({ navigate, sessionId: passedSessionId }) {
@@ -68,6 +74,7 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   const [templates, setTemplates] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [filteredPhotos, setFilteredPhotos] = useState([]);
   const [ready, setReady] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
@@ -86,6 +93,21 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   }, [selectedId]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const compute = async () => {
+      if (filter === "none") {
+        setFilteredPhotos(photos);
+        return;
+      }
+      const resolved = [];
+      for (const p of photos) {
+        resolved.push(p ? await applyFilter(p, filter) : null);
+      }
+      setFilteredPhotos(resolved);
+    };
+    compute();
+  }, [photos, filter]);
 
   const template = templates.find((t) => t.id === selectedId) || null;
 
