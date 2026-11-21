@@ -28,6 +28,10 @@ const photoSessionSchema = new mongoose.Schema({
 const Template = mongoose.model("Template", templateSchema);
 const PhotoSession = mongoose.model("PhotoSession", photoSessionSchema);
 
+function toId(t) {
+  return { ...t, id: t._id ? t._id.toString() : t.id };
+}
+
 function parseFrames(t) {
   if (t == null) return [];
   if (Array.isArray(t.frames)) return t.frames;
@@ -38,14 +42,14 @@ const db = {
   listTemplates({ published } = {}) {
     const filter = published === true || published === "true" ? { status: "published" } : {};
     return Template.find(filter).sort({ created_at: -1 }).lean().then((templates) =>
-      templates.map((t) => ({ ...t, frames: parseFrames(t) }))
+      templates.map((t) => toId({ ...t, frames: parseFrames(t) }))
     );
   },
 
   getTemplate(id) {
     return Template.findById(id).lean().then((t) => {
       if (!t) return null;
-      return { ...t, frames: parseFrames(t) };
+      return toId({ ...t, frames: parseFrames(t) });
     });
   },
 
@@ -59,15 +63,14 @@ const db = {
       status: "draft",
       frames: [],
     });
-    return template.save().then((t) => ({ ...t.toObject(), frames: [] }));
+    return template.save().then((t) => toId({ ...t.toObject(), frames: [] }));
   },
 
   updateTemplate(id, fields) {
     const update = { ...fields, updated_at: new Date() };
-    if (fields.frames !== undefined) update.frames = JSON.stringify(fields.frames);
     return Template.findByIdAndUpdate(id, update, { new: true, lean: true }).then((t) => {
       if (!t) return null;
-      return { ...t, frames: parseFrames(t) };
+      return toId({ ...t, frames: parseFrames(t) });
     });
   },
 
@@ -78,7 +81,7 @@ const db = {
   deleteTemplate(id) {
     return Template.findById(id).lean().then((t) => {
       if (!t) return null;
-      return Template.findByIdAndDelete(id).then(() => t);
+      return Template.findByIdAndDelete(id).then(() => toId(t));
     });
   },
 
