@@ -88,6 +88,8 @@ export default function TemplateEditorPage({ navigate, templateId }) {
   const dragRef = useRef(null);
   const resizeRef = useRef(null);
   const rafRef = useRef(null);
+  const imgRef = useRef(null);
+  const [imgAspectRatio, setImgAspectRatio] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -572,12 +574,20 @@ export default function TemplateEditorPage({ navigate, templateId }) {
             <div
               className="max-w-[900px] w-full relative inline-block rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border-4 border-fleur-blush/60 bg-white overflow-visible"
               ref={containerRef}
-              style={{ touchAction: "none" }}
+              style={{ touchAction: "none", ...(imgAspectRatio && { aspectRatio: imgAspectRatio }) }}
             >
               <img
+                ref={imgRef}
                 src={templateImageUrl(template.original_path)}
                 alt="Template"
                 className="block max-w-full max-h-[60vh] object-fill"
+                onLoad={(e) => {
+                  const naturalW = e.currentTarget.naturalWidth;
+                  const naturalH = e.currentTarget.naturalHeight;
+                  if (naturalW && naturalH) {
+                    setImgAspectRatio(naturalW / naturalH);
+                  }
+                }}
                 onError={(e) => {
                   e.currentTarget.src = template.original_path;
                 }}
