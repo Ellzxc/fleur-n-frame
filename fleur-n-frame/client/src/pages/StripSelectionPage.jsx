@@ -25,16 +25,35 @@ function applyFilter(dataUrl, filterId) {
     ctx.drawImage(img, 0, 0);
 
     if (filterId === "bw") {
-      const r = img.data[r];
-      const g = img.data[g];
-      const b = img.data[b];
-      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-      ctx.putImageData({ data: new Uint8ClampedArray([gray, gray, gray]), width: canvas.width, height: canvas.height }, 0, 0);
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      const data = img.data;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = (y * w + x) * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+          ctx.putImageData({ data: new Uint8ClampedArray([gray, gray, gray]), width: canvas.width, height: canvas.height }, 0, 0);
+        }
+      }
     } else if (filterId === "vintage") {
-      const tr = Math.min(255, r * 1.1 + g * 0.1 + b * 0.1);
-      const tg = Math.min(255, r * 0.1 + g * 1.0 + b * 0.1);
-      const tb = Math.min(255, r * 0.1 + g * 0.1 + b * 1.0);
-      ctx.putImageData({ data: new Uint8ClampedArray([tr, tg, tb]), width: canvas.width, height: canvas.height }, 0, 0);
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      const data = img.data;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = (y * w + x) * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const tr = Math.min(255, r * 1.1 + g * 0.1 + b * 0.1);
+          const tg = Math.min(255, r * 0.1 + g * 1.0 + b * 0.1);
+          const tb = Math.min(255, r * 0.1 + g * 0.1 + b * 1.0);
+          ctx.putImageData({ data: new Uint8ClampedArray([tr, tg, tb]), width: canvas.width, height: canvas.height }, 0, 0);
+        }
+      }
     }
 
     return canvas.toDataURL("image/png");
