@@ -5,7 +5,125 @@ import { usePhotos } from "@/context/PhotoContext";
 import { api } from "@/lib/api";
 
 const TOTAL = 4;
-const COUNTDOWN_SECONDS = 3;
+
+const STORAGE_KEYS = {
+  countdown: "fleur_countdown_timer",
+  shutter: "fleur_shutter_sound",
+  countdownTick: "fleur_countdown_tick",
+};
+
+const DEFAULT_COUNTDOWN = "3";
+const DEFAULT_SHUTTER = "classic";
+const DEFAULT_COUNTDOWN_TICK = "true";
+
+const shutterSounds = {
+  classic: (ctx, t) => {
+    const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * 0.1));
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-(i / bufferSize) * 8);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.22, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    noise.connect(ng);
+    ng.connect(ctx.destination);
+    noise.start(t);
+
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(70, t);
+    osc.frequency.exponentialRampToValueAtTime(20, t + 0.09);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.12, t);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    osc.connect(og);
+    og.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.1);
+  },
+  loud: (ctx, t) => {
+    const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * 0.15));
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-(i / bufferSize) * 6);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.35, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    noise.connect(ng);
+    ng.connect(ctx.destination);
+    noise.start(t);
+
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(110, t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.18, t);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    osc.connect(og);
+    og.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.12);
+  },
+  studio: (ctx, t) => {
+    const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * 0.06));
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-(i / bufferSize) * 12);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.16, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    noise.connect(ng);
+    ng.connect(ctx.destination);
+    noise.start(t);
+
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.exponentialRampToValueAtTime(60, t + 0.05);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.08, t);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    osc.connect(og);
+    og.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.05);
+  },
+  silent: () => {},
+};
+
+const SHUTTER_LABELS = {
+  classic: "Classic click",
+  loud: "Loud snap",
+  studio: "Studio shutter",
+  silent: "Silent",
+};
+
+const playCountdownTick = (ctx, t) => {
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(900, t);
+  osc.frequency.exponentialRampToValueAtTime(700, t + 0.06);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.12, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  osc.connect(g);
+  g.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.08);
+};
 
 export default function PhotoboothPage({ navigate }) {
   const { photos, addPhoto, resetPhotos } = usePhotos();
@@ -14,7 +132,10 @@ export default function PhotoboothPage({ navigate }) {
   const [cameraReady, setCameraReady] = useState(false);
   const [status, setStatus] = useState("idle");
   const [step, setStep] = useState(0);
-  const [timer, setTimer] = useState(COUNTDOWN_SECONDS);
+  const [timer, setTimer] = useState(3);
+  const [countdownSeconds, setCountdownSeconds] = useState(DEFAULT_COUNTDOWN);
+  const [shutterSound, setShutterSound] = useState(DEFAULT_SHUTTER);
+  const [countdownTickEnabled, setCountdownTickEnabled] = useState(DEFAULT_COUNTDOWN_TICK === "true");
   const [flashOpacity, setFlashOpacity] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(null);
   const audioCtxRef = useRef(null);
@@ -31,9 +152,9 @@ export default function PhotoboothPage({ navigate }) {
     resetPhotos();
     setStep(0);
     setStatus("idle");
-    setTimer(COUNTDOWN_SECONDS);
+    setTimer(Number(countdownSeconds));
     setFlashOpacity(0);
-  }, [resetPhotos]);
+  }, [resetPhotos, countdownSeconds]);
 
   const enableCamera = useCallback(() => {
     initAudio();
@@ -60,58 +181,44 @@ export default function PhotoboothPage({ navigate }) {
       if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume();
       const ctx = audioCtxRef.current;
       const t = ctx.currentTime;
-
-      // Mechanical click: short noise burst.
-      const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * 0.1));
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-(i / bufferSize) * 8);
-      }
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-      const ng = ctx.createGain();
-      ng.gain.setValueAtTime(0.18, t);
-      ng.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-      noise.connect(ng);
-      ng.connect(ctx.destination);
-      noise.start(t);
-
-      // Low thud.
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(70, t);
-      osc.frequency.exponentialRampToValueAtTime(20, t + 0.09);
-      const og = ctx.createGain();
-      og.gain.setValueAtTime(0.1, t);
-      og.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-      osc.connect(og);
-      og.connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + 0.1);
+      shutterSounds[shutterSound](ctx, t);
     } catch (err) {
       // Audio synthesis best-effort only.
     }
-  }, []);
+  }, [shutterSound]);
 
   useEffect(() => {
     if (!cameraEnabled || !cameraReady) return;
     if (status === "idle" && step < TOTAL) {
       setStatus("countdown");
-      setTimer(COUNTDOWN_SECONDS);
+      setTimer(Number(countdownSeconds));
     }
-  }, [cameraEnabled, cameraReady, status, step]);
+  }, [cameraEnabled, cameraReady, status, step, countdownSeconds]);
 
   useEffect(() => {
     if (status !== "countdown") return;
     const id = setInterval(() => {
       setTimer((t) => {
         if (t <= 1) { clearInterval(id); return 0; }
+        if (countdownTickEnabled) playCountdownTick();
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [status]);
+  }, [status, countdownTickEnabled]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.countdown);
+      if (saved) setCountdownSeconds(saved);
+      const savedShutter = localStorage.getItem(STORAGE_KEYS.shutter);
+      if (savedShutter && shutterSounds[savedShutter]) setShutterSound(savedShutter);
+      const savedTick = localStorage.getItem(STORAGE_KEYS.countdownTick);
+      if (savedTick !== null) setCountdownTickEnabled(savedTick === "true");
+    } catch (err) {
+      // localStorage unavailable; use defaults.
+    }
+  }, []);
 
   useEffect(() => {
     if (status !== "countdown" || timer > 0) return;
