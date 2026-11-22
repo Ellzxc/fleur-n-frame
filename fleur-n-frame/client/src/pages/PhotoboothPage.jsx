@@ -313,9 +313,9 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Main layout: camera center-left, captured photos right */}
         {!previewOpen && (
-          <div className="relative flex items-center flex-1 p-2 lg:p-6 z-0">
+          <div className="relative flex h-full w-full items-center p-2 lg:p-6 z-0">
             {/* Camera monitor — center-left, larger scale */}
-            <div className="relative flex-shrink-0 max-w-[850px] aspect-video rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] border border-fleur-blush/100 bg-[#2a2a2a] overflow-hidden flex items-center justify-center">
+            <div className="relative flex-shrink-0 w-full max-w-[850px] aspect-video rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] border border-fleur-blush/100 bg-[#2a2a2a] overflow-hidden flex items-center justify-center">
               <div className="absolute inset-0 z-20 flex items-center justify-center">
                 <CameraPreview ref={cameraRef} active={true} className="w-full h-full object-cover" />
               </div>
