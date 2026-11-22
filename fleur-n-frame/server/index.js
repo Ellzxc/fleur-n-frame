@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const templatesRoute = require("./routes/templates");
+const shareRoute = require("./routes/share");
 const db = require("./db");
 require("./cloudinary");
 
@@ -12,6 +13,7 @@ app.use(cors({ origin: corsOrigin }));
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/api/templates", templatesRoute);
+app.use("/api/share", shareRoute);
 
 // Photo session routes
 app.post("/api/photos", express.json(), (req, res) => {

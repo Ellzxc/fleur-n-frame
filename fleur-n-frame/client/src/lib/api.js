@@ -33,4 +33,6 @@ export const api = {
   savePhotoSession: (sessionId, photos) => request("/photos", { method: "POST", body: JSON.stringify({ sessionId, photos }) }),
   getPhotoSession: (sessionId) => request(`/photos/${sessionId}`),
   deletePhotoSession: (sessionId) => request(`/photos/${sessionId}`, { method: "DELETE" }),
+  shareUpload: (imageDataUrl) => request("/share/upload", { method: "POST", body: JSON.stringify({ image: imageDataUrl }) }),
+  getSharePhoto: (photoId) => request(`/share/${photoId}`),
 };

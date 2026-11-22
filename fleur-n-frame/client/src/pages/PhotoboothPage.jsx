@@ -15,8 +15,9 @@ export default function PhotoboothPage({ navigate }) {
   const [status, setStatus] = useState("idle");
   const [step, setStep] = useState(0);
   const [timer, setTimer] = useState(COUNTDOWN_SECONDS);
-  const [flash, setFlash] = useState(false);
+  const [flashOpacity, setFlashOpacity] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(null);
+  const audioCtxRef = useRef(null);
 
   useEffect(() => {
     if (!cameraEnabled) return;
@@ -35,8 +36,62 @@ export default function PhotoboothPage({ navigate }) {
   }, [resetPhotos]);
 
   const enableCamera = useCallback(() => {
+    initAudio();
     setCameraEnabled(true);
     setStatus("idle");
+  }, []);
+
+  const initAudio = useCallback(() => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+      if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume();
+    } catch (err) {
+      // Audio may be blocked until user interaction; ignored.
+    }
+  }, []);
+
+  const playShutter = useCallback(() => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+      if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume();
+      const ctx = audioCtxRef.current;
+      const t = ctx.currentTime;
+
+      // Mechanical click: short noise burst.
+      const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * 0.1));
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-(i / bufferSize) * 8);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.18, t);
+      ng.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      noise.connect(ng);
+      ng.connect(ctx.destination);
+      noise.start(t);
+
+      // Low thud.
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(70, t);
+      osc.frequency.exponentialRampToValueAtTime(20, t + 0.09);
+      const og = ctx.createGain();
+      og.gain.setValueAtTime(0.1, t);
+      og.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc.connect(og);
+      og.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.1);
+    } catch (err) {
+      // Audio synthesis best-effort only.
+    }
   }, []);
 
   useEffect(() => {
@@ -69,9 +124,10 @@ export default function PhotoboothPage({ navigate }) {
       setTimeout(() => doCapture(), 150);
       return;
     }
-    setFlash(true);
+    setFlashOpacity(1);
+    playShutter();
     addPhoto(dataUrl, step);
-    setTimeout(() => setFlash(false), 180);
+    setTimeout(() => setFlashOpacity(0), 400);
     setTimeout(() => {
       setStep((s) => {
         const next = s + 1;
@@ -141,15 +197,20 @@ export default function PhotoboothPage({ navigate }) {
         {!previewOpen && (
           <div className="flex flex-col items-center justify-center flex-1 z-0 relative w-full max-w-full p-4 lg:p-8">
             <div className="w-full max-w-[900px] aspect-video relative rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden">
-              {cameraEnabled ? (
-                <>
-                  <CameraPreview ref={cameraRef} active={true} />
-                  {flash && (
-                    <div className="absolute inset-0 bg-white opacity-80 pointer-events-none animate-flash"></div>
-                  )}
-                  <CountdownOverlay n={status === "countdown" ? timer : 0} />
-                </>
-              ) : (
+                  {cameraEnabled ? (
+                    <>
+                      <CameraPreview ref={cameraRef} active={true} />
+                      <div
+                        className="fixed inset-0 z-[60] bg-[#FFFFFF] pointer-events-none"
+                        style={{
+                          opacity: flashOpacity,
+                          transition: "opacity 250ms ease-out",
+                          transform: "translateZ(0)",
+                        }}
+                      />
+                      <CountdownOverlay n={status === "countdown" ? timer : 0} />
+                    </>
+                  ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white">
                   <div className="w-20 h-20 rounded-full bg-fleur-blush flex items-center justify-center mb-6 text-fleur-rose font-bold text-2xl shadow-lg animate-bounce-gentle">
                     <Camera className="w-10 h-10" />

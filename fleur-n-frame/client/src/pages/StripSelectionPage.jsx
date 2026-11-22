@@ -11,11 +11,13 @@ import {
   SlidersHorizontal,
   ZoomIn,
   ZoomOut,
+  RefreshCw,
 } from "lucide-react";
 import { api, templateImageUrl } from "@/lib/api";
 import { usePhotos } from "@/context/PhotoContext";
 import { PhotoStripRenderer } from "@/components/PhotoStripRenderer";
 import { jsPDF } from "jspdf";
+import { QRCodeCanvas as QRCode } from "qrcode.react";
 
 const FILTERS = [
   { id: "none", label: "Original" },
@@ -93,7 +95,7 @@ function MiniStrip({ template, isSelected }) {
 }
 
 export default function StripSelectionPage({ navigate, sessionId: passedSessionId }) {
-  const { photos } = usePhotos();
+  const { photos, resetPhotos } = usePhotos();
   const [templates, setTemplates] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -102,6 +104,18 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   const [filter, setFilter] = useState("none");
   const [previewScale, setPreviewScale] = useState(1);
   const scrollRef = useRef(null);
+
+  /* QR share state */
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState(null);
+  const [sharePhotoId, setSharePhotoId] = useState(null);
+  const [shareImageUrl, setShareImageUrl] = useState(null);
+  const [shareDownloadUrl, setShareDownloadUrl] = useState(null);
+
+  /* Idle auto-reset timer state */
+  const [idleSeconds, setIdleSeconds] = useState(30);
+  const [idleActive, setIdleActive] = useState(false);
+  const idleTimerRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -156,6 +170,65 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
     document.body.removeChild(link);
   }, [previewUrl]);
 
+  const handleShareUpload = useCallback(async () => {
+    if (!previewUrl) return;
+    setShareLoading(true);
+    setShareError(null);
+    try {
+      const data = await api.shareUpload(previewUrl);
+      setSharePhotoId(data.photoId);
+      setShareImageUrl(data.imageUrl);
+      setShareDownloadUrl(data.downloadUrl);
+      setIdleActive(false);
+    } catch (err) {
+      setShareError(err.message || "Share upload failed");
+    } finally {
+      setShareLoading(false);
+    }
+  }, [previewUrl]);
+
+  const resetIdle = useCallback(() => {
+    setIdleSeconds(30);
+    setIdleActive(true);
+  }, []);
+
+  useEffect(() => {
+    if (!allTaken) {
+      setIdleActive(false);
+      return;
+    }
+    resetIdle();
+    const onActivity = () => resetIdle();
+    window.addEventListener("mousemove", onActivity);
+    window.addEventListener("touchstart", onActivity);
+    window.addEventListener("click", onActivity);
+    window.addEventListener("keydown", onActivity);
+    idleTimerRef.current = setInterval(() => {
+      setIdleSeconds((s) => {
+        if (s <= 1) {
+          setIdleActive(false);
+          resetPhotos();
+          navigate("welcome");
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => {
+      clearInterval(idleTimerRef.current);
+      window.removeEventListener("mousemove", onActivity);
+      window.removeEventListener("touchstart", onActivity);
+      window.removeEventListener("click", onActivity);
+      window.removeEventListener("keydown", onActivity);
+    };
+  }, [allTaken, resetIdle, resetPhotos, navigate]);
+
+  const handleIdleDone = useCallback(() => {
+    setIdleActive(false);
+    resetPhotos();
+    navigate("welcome");
+  }, [resetPhotos, navigate]);
+
   const scrollStrip = (dir) => {
     const el = scrollRef.current;
     if (!el) return;
@@ -209,6 +282,13 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
               Pick a template to see your photos come together into a polished strip.
             </p>
           </header>
+          {idleActive && (
+            <div className="mb-6 text-center animate-slide-up">
+              <p className="text-[11px] font-bold text-fleur-ink/40 tracking-widest uppercase">
+                Resetting for next guest in {idleSeconds}s…
+              </p>
+            </div>
+          )}
 
           {/* Template chooser — horizontal snap strip */}
           <section className="mb-12">
@@ -364,6 +444,53 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                   </div>
 
                   <div className="mt-auto flex flex-col gap-3 pt-2">
+                    {/* Share to phone panel */}
+                    {sharePhotoId ? (
+                      <div className="flex flex-col gap-3">
+                        <div className="text-[10px] font-bold text-fleur-ink/50 uppercase tracking-widest mb-1">Share to phone</div>
+                        <div className="flex items-center justify-center gap-4">
+                          <QRCode
+                            value={`${window.location.origin}/share/${sharePhotoId}`}
+                            size={150}
+                            className="bg-white p-1 rounded-lg shadow-sm"
+                          />
+                        </div>
+                        <p className="text-xs text-center text-fleur-ink/50">Scan to open your photo</p>
+                        <button
+                          onClick={() => {
+                            if (shareDownloadUrl) window.location.href = shareDownloadUrl;
+                          }}
+                          className="btn-primary w-full py-4 flex items-center justify-center gap-3 text-base shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]"
+                        >
+                          ↓ Download Photo
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleShareUpload}
+                        disabled={!allTaken || !previewUrl || shareLoading}
+                        className="btn-soft w-full py-4 flex items-center justify-center gap-3 text-base hover:bg-fleur-blush/50"
+                      >
+                        {shareLoading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" /> Uploading…
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-4 h-4" /> Share to phone
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {shareError && (
+                      <p className="text-[10px] text-center text-fleur-rose">{shareError}</p>
+                    )}
+                    {!allTaken && (
+                      <p className="text-center text-xs text-fleur-ink/40">
+                        Capture all four photos to export.
+                      </p>
+                    )}
+                    {/* Save buttons */}
                     <button
                       onClick={handleSavePDF}
                       disabled={!allTaken || !previewUrl || generating}
@@ -379,11 +506,13 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                     >
                       <Download className="w-5 h-5" /> Save as Image
                     </button>
-                    {!allTaken && (
-                      <p className="text-center text-xs text-fleur-ink/40">
-                        Capture all four photos to export.
-                      </p>
-                    )}
+                    {/* Done / reset */}
+                    <button
+                      onClick={handleIdleDone}
+                      className="btn-ghost w-full py-3 text-sm flex items-center justify-center gap-2 hover:bg-fleur-blush/50"
+                    >
+                      <RefreshCw className="w-4 h-4" /> Done — start over
+                    </button>
                   </div>
                 </div>
               </div>

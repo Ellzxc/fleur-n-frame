@@ -25,8 +25,16 @@ const photoSessionSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now },
 });
 
+const photoSchema = new mongoose.Schema({
+  photoId: { type: String, unique: true, index: true },
+  cloudinaryUrl: String,
+  publicId: String,
+  createdAt: { type: Date, default: Date.now },
+});
+
 const Template = mongoose.model("Template", templateSchema);
 const PhotoSession = mongoose.model("PhotoSession", photoSessionSchema);
+const Photo = mongoose.model("Photo", photoSchema);
 
 function toId(t) {
   return { ...t, id: t._id ? t._id.toString() : t.id };
@@ -96,6 +104,20 @@ const db = {
 
   deletePhotoSession(sessionId) {
     return PhotoSession.findOneAndDelete({ id: sessionId }).lean().then((session) => session || null);
+  },
+
+  createPhoto({ photoId, cloudinaryUrl, publicId }) {
+    const photo = new Photo({ photoId, cloudinaryUrl, publicId });
+    return photo.save().then((p) => ({
+      photoId: p.photoId,
+      cloudinaryUrl: p.cloudinaryUrl,
+      publicId: p.publicId,
+      createdAt: p.createdAt,
+    }));
+  },
+
+  getPhoto(photoId) {
+    return Photo.findOne({ photoId }).lean().then((p) => p || null);
   },
 };
 

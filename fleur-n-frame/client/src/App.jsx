@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import WelcomePage from "@/pages/WelcomePage";
 import PhotoboothPage from "@/pages/PhotoboothPage";
 import StripSelectionPage from "@/pages/StripSelectionPage";
 import CustomerPreviewPage from "@/pages/CustomerPreviewPage";
+import SharePage from "@/pages/SharePage";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminLogin from "@/pages/AdminLogin";
 import TemplateEditorPage from "@/pages/TemplateEditorPage";
@@ -16,6 +17,7 @@ function AppRoutes() {
   const [editorTemplateId, setEditorTemplateId] = useState(null);
   const [customerSessionId, setCustomerSessionId] = useState(null);
   const [stripSessionId, setStripSessionId] = useState(null);
+  const [sharePhotoId, setSharePhotoId] = useState(null);
   const [toast, setToast] = useState(null);
 
   const navigate = async (to, id) => {
@@ -55,8 +57,21 @@ function AppRoutes() {
     }
     if (to === "customer") setCustomerSessionId(id);
     if (to === "strips") setStripSessionId(id);
+    if (to === "share") {
+      setSharePhotoId(id);
+      setView("share");
+      return;
+    }
     setView(to);
   };
+
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/share\/([^/?#]+)$/);
+    if (match) {
+      setSharePhotoId(match[1]);
+      setView("share");
+    }
+  }, []);
 
   const requireAdmin = (to) => {
     if (!isAdmin) {
@@ -71,6 +86,7 @@ function AppRoutes() {
       {view === "welcome" && <WelcomePage navigate={navigate} />}
       {view === "photobooth" && <PhotoboothPage navigate={navigate} />}
       {view === "strips" && <StripSelectionPage navigate={navigate} sessionId={stripSessionId} />}
+      {view === "share" && <SharePage navigate={navigate} photoId={sharePhotoId} />}
       {view === "customer" && <CustomerPreviewPage navigate={navigate} sessionId={customerSessionId} />}
       {view === "admin-login" && <AdminLogin navigate={navigate} />}
       {view === "admin" && (
