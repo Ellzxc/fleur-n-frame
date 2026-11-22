@@ -9,6 +9,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import TemplateEditorPage from "@/pages/TemplateEditorPage";
 import { PhotoProvider } from "@/context/PhotoContext";
 import { usePhotos } from "@/context/PhotoContext";
+import { api } from "@/lib/api";
 
 function AppRoutes() {
   const { resetPhotos } = usePhotos();
@@ -18,7 +19,6 @@ function AppRoutes() {
   const [customerSessionId, setCustomerSessionId] = useState(null);
   const [stripSessionId, setStripSessionId] = useState(null);
   const [sharePhotoId, setSharePhotoId] = useState(null);
-  const [toast, setToast] = useState(null);
 
   const navigate = async (to, id) => {
     if (to === "welcome") {
@@ -30,11 +30,8 @@ function AppRoutes() {
         try {
           await api.deletePhotoSession(sid);
           sessionStorage.removeItem("fleur_last_session");
-          setToast({ message: "Ready to start new session", type: "success" });
-          setTimeout(() => setToast(null), 4000);
         } catch (err) {
-          setToast({ message: "Failed to clear previous session", type: "error" });
-          setTimeout(() => setToast(null), 4000);
+          // Silent cleanup; auto-disposal system handles disposal independently.
         }
       }
       setView("welcome");
@@ -114,19 +111,6 @@ function AppRoutes() {
             <button onClick={() => { sessionStorage.removeItem("fleur_admin"); setIsAdmin(false); setView("welcome"); }} className="btn-primary">
               Back to home
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Toast notification */}
-      {toast && (
-        <div className="fixed bottom-4 left-4 z-50 animate-slide-up">
-          <div className={`px-6 py-4 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)] border text-sm font-medium flex items-center gap-3 ${
-            toast.type === "error"
-              ? "bg-fleur-rose/90 border-fleur-rose/50 text-white"
-              : "bg-fleur-rose border-fleur-rose/30 text-fleur-ink"
-          }`}>
-            <span>{toast.message}</span>
           </div>
         </div>
       )}

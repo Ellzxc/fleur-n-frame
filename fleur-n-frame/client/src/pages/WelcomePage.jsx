@@ -66,18 +66,18 @@ export default function WelcomePage({ navigate }) {
               Capture your moment and turn it into a beautiful photo strip. Instant prints, timeless memories.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md animate-slide-up delay-300">
+            <div className="flex flex-col gap-5 w-full max-w-xs animate-slide-up delay-300">
               <button
                 onClick={() => navigate("photobooth")}
-                className="btn-primary w-full sm:w-auto px-10 py-4 text-lg flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(212,165,165,0.35)]"
+                className="w-full py-6 text-xl font-display font-bold tracking-tight flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_40px_rgba(212,165,165,0.45)] active:scale-95 transition-all"
               >
-                <Camera className="w-5 h-5" /> Start Capturing
+                <Camera className="w-6 h-6" /> Start Capturing
               </button>
               <button
                 onClick={() => navigate("admin-login")}
-                className="btn-ghost w-full sm:w-auto px-10 py-4 text-sm text-fleur-ink/60 flex items-center justify-center gap-2 hover:bg-fleur-blush/60"
+                className="w-full py-2.5 text-xs font-medium text-fleur-ink/30 flex items-center justify-center gap-2 hover:bg-fleur-blush/30 hover:text-fleur-ink/60 transition-all border border-fleur-blush/40"
               >
-                <Cog className="w-4 h-4" /> Admin login
+                <Cog className="w-3 h-3" /> Admin login
               </button>
             </div>
 
