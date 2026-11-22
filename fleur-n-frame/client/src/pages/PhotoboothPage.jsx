@@ -313,9 +313,9 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Main layout: camera center-left, captured photos right */}
         {!previewOpen && (
-          <div className="relative flex h-full w-full items-center p-2 lg:p-6 z-0">
+          <div className="relative flex items-center justify-center gap-8 mt-[72px] h-[calc(100vh-72px)] w-full p-2 lg:p-8 z-0">
             {/* Camera monitor — center-left, larger scale */}
-            <div className="relative flex-shrink-0 w-full max-w-[850px] aspect-video rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] border border-fleur-blush/100 bg-[#2a2a2a] overflow-hidden flex items-center justify-center">
+            <div className="relative flex-shrink-0 max-w-[700px] aspect-video rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] border border-fleur-blush/100 bg-[#2a2a2a] overflow-hidden flex items-center justify-center">
               <div className="absolute inset-0 z-20 flex items-center justify-center">
                 <CameraPreview ref={cameraRef} active={true} className="w-full h-full object-cover" />
               </div>
@@ -342,12 +342,12 @@ export default function PhotoboothPage({ navigate }) {
               <div className="absolute bottom-4 right-4 z-10 w-7 h-7 border-b-2 border-r-2 border-fleur-rose/60"></div>
             </div>
 
-            {/* Captured photos sidebar — compact square cards */}
-            <div className="ml-6 hidden lg:flex flex-col items-center gap-4 pt-2">
+            {/* Captured photos sidebar — accurate rectangles scaled down from camera monitor */}
+            <div className="flex-shrink-0 hidden lg:flex flex-col items-center gap-4 pt-2">
               <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-1">Captured</div>
-              <div className="flex flex-col gap-3 w-full max-w-xs">
+              <div className="flex flex-col gap-4 w-full max-w-xs">
                 {Array.from({ length: TOTAL }).map((_, i) => (
-                  <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border shadow-sm flex items-center justify-center transition-all duration-300 group cursor-pointer" onClick={() => photos[i] && openPreview(i)}>
+                  <div key={i} className="relative w-[110px] aspect-video rounded-xl overflow-hidden border shadow-sm flex items-center justify-center transition-all duration-300 group cursor-pointer" onClick={() => photos[i] && openPreview(i)}>
                     <div className="absolute inset-0 bg-[#1a1a1a] opacity-50 z-0" />
                     {photos[i] ? (
                       <img src={photos[i]} alt={`Photo ${i + 1}`} className="w-full h-full object-cover z-10" />
@@ -357,7 +357,7 @@ export default function PhotoboothPage({ navigate }) {
                         <span className="text-[9px] font-medium opacity-40">{i + 1}</span>
                       </div>
                     )}
-                    <div className="absolute top-1 right-1 z-20 flex items-center gap-1 bg-white/90 backdrop-blur px-1.5 py-0.5 rounded-full text-fleur-rose font-bold text-[8px] shadow-sm border border-white">
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur px-2 py-0.5 rounded-full text-fleur-rose font-bold text-[9px] shadow-sm border border-white">
                       {i + 1}
                     </div>
                   </div>
