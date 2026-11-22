@@ -33,8 +33,10 @@ const STRIP_COLORS = {
 function MiniStrip({ template }) {
   const frames = Array.isArray(template.frames) ? template.frames : [];
   const hasImage = Boolean(template?.original_path);
+  const aspect =
+    template?.width && template?.height ? Number(template.width) / Number(template.height) : 9 / 16;
   return (
-    <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-[#2c2a2c] shadow-inner">
+    <div className="relative rounded-xl overflow-hidden bg-[#2c2a2c] shadow-inner" style={{ aspectRatio: aspect }}>
       {hasImage && (
         <img
           src={templateImageUrl(template.original_path)}
