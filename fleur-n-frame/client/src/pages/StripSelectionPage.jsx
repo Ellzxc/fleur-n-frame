@@ -9,8 +9,10 @@ import {
   Camera,
   Sparkles,
   SlidersHorizontal,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, templateImageUrl } from "@/lib/api";
 import { usePhotos } from "@/context/PhotoContext";
 import { PhotoStripRenderer } from "@/components/PhotoStripRenderer";
 import { jsPDF } from "jspdf";
@@ -30,35 +32,45 @@ const STRIP_COLORS = {
 
 function MiniStrip({ template }) {
   const frames = Array.isArray(template.frames) ? template.frames : [];
-  if (frames.length === 0) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center text-white/30 text-[10px] font-medium">
-        No frames
-      </div>
-    );
-  }
+  const hasImage = Boolean(template?.original_path);
   return (
-    <>
+    <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-[#2c2a2c] shadow-inner">
+      {hasImage && (
+        <img
+          src={templateImageUrl(template.original_path)}
+          alt="Template preview"
+          className="block w-full h-full object-cover"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      )}
+      {frames.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center text-white/30 text-[10px] font-medium">
+          No frames
+        </div>
+      )}
       {frames.map((f, i) => {
         const num = f.photoNumber || i + 1;
         const colorKey = ((num - 1) % 4) + 1;
         return (
           <div
             key={f.id || i}
-            className="absolute flex items-center justify-center rounded-[4px] font-bold text-[#3a2c2c] shadow-sm ring-1 ring-black/5"
+            className="absolute flex items-center justify-center rounded-[6px] font-black text-[#222] shadow-md backdrop-blur-sm border border-white/30"
             style={{
               left: `${(f.x || 0) * 100}%`,
               top: `${(f.y || 0) * 100}%`,
               width: `${(f.width || 0) * 100}%`,
               height: `${(f.height || 0) * 100}%`,
-              backgroundColor: STRIP_COLORS[colorKey],
+              backgroundColor: `${STRIP_COLORS[colorKey]}cc`,
+              textShadow: "0 0 6px rgba(255,255,255,0.75)",
             }}
           >
             <span className="text-[11px] leading-none">{num}</span>
           </div>
         );
       })}
-    </>
+    </div>
   );
 }
 
@@ -70,6 +82,7 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("none");
+  const [previewScale, setPreviewScale] = useState(1);
   const scrollRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -267,18 +280,44 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
             <section className="card p-6 sm:p-10 animate-slide-up">
               <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
                 <div className="w-full lg:w-1/2">
-                  <div className="relative rounded-2xl bg-fleur-blush/40 border border-fleur-blush/60 p-4 sm:p-6 flex items-center justify-center min-h-[280px]">
+                  <div className="relative rounded-2xl bg-fleur-blush/40 border border-fleur-blush/60 p-4 sm:p-6 flex items-center justify-center min-h-[280px] overflow-visible">
                     <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-bold text-fleur-ink/70 border border-fleur-blush/50 shadow-sm uppercase tracking-wider">
                       <Image className="w-3 h-3 text-fleur-rose" /> Live preview
                     </div>
-                    <div className="max-h-[440px] flex items-center justify-center">
-                      <PhotoStripRenderer
-                        template={template}
-                        photos={photos}
-                        maxDimension={1200}
-                        onReady={handleRendererReady}
-                        filter={filter}
-                      />
+                    <div className="absolute top-3 right-3 z-20 flex gap-1">
+                      <button
+                        onClick={() => setPreviewScale((s) => Math.max(0.5, s - 0.2))}
+                        className="w-8 h-8 rounded-full bg-white border border-fleur-blush/60 text-fleur-ink/60 flex items-center justify-center hover:bg-fleur-blush/50 active:scale-95 transition-all"
+                        title="Zoom out"
+                      >
+                        <ZoomOut className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setPreviewScale((s) => Math.min(2, s + 0.2))}
+                        className="w-8 h-8 rounded-full bg-fleur-rose border border-fleur-rose text-white flex items-center justify-center hover:bg-fleur-rose/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(212,165,165,0.35)]"
+                        title="Zoom in"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="max-h-[440px] flex items-center justify-center overflow-visible">
+                      <div
+                        className="inline-block"
+                        style={{
+                          transform: `scale(${previewScale})`,
+                          transformOrigin: "center center",
+                          display: "inline-flex",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <PhotoStripRenderer
+                          template={template}
+                          photos={photos}
+                          maxDimension={1200}
+                          onReady={handleRendererReady}
+                          filter={filter}
+                        />
+                      </div>
                     </div>
                   </div>
                   <p className="mt-4 text-xs text-fleur-ink/50 leading-relaxed text-center">
