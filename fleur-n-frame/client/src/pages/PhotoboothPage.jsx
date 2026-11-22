@@ -150,6 +150,7 @@ export default function PhotoboothPage({ navigate }) {
   const [previewOpen, setPreviewOpen] = useState(null);
   const audioCtxRef = useRef(null);
   const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
 
   useEffect(() => {
     if (!cameraEnabled) return;
@@ -232,6 +233,23 @@ export default function PhotoboothPage({ navigate }) {
   }, []);
 
   useEffect(() => {
+    if (!saving) {
+      setSaveProgress(0);
+      return;
+    }
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 10 + 5;
+      if (progress >= 90) {
+        progress = 90;
+        clearInterval(interval);
+      }
+      setSaveProgress(progress);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [saving]);
+
+  useEffect(() => {
     if (status !== "countdown" || timer > 0) return;
     doCapture();
   }, [status, timer]);
@@ -287,7 +305,7 @@ export default function PhotoboothPage({ navigate }) {
         {/* Full-screen photo preview modal */}
         {previewOpen !== null && (
           <div className="fixed inset-0 z-50 bg-[#0a0a0a] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className="relative w-full max-w-[800px] h-[800px] flex items-center justify-center bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden border border-white/10 animate-slide-up">
+            <div className="relative w-full max-w-[800px] md:h-[800px] h-[60vh] flex items-center justify-center bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden border border-white/10 animate-slide-up">
               <img src={photos[previewOpen]} alt="Preview" className="w-full h-full object-cover" />
               <button onClick={closePreview} className="absolute top-4 right-4 z-30 bg-[#0a0a0a] text-white rounded-full p-3 hover:bg-fleur-rose/90 transition-all">
                 <XIcon className="w-5 h-5" />
@@ -298,15 +316,15 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Top bar */}
         {!previewOpen && (
-          <div className="fixed top-0 left-0 right-0 z-40 px-6 py-3 flex justify-between items-center bg-white/70 backdrop-blur-md border-b border-fleur-blush/50">
+          <div className="fixed top-0 left-0 right-0 z-40 px-4 py-2 md:px-6 md:py-3 flex justify-between items-center bg-white/70 backdrop-blur-md border-b border-fleur-blush/50">
             <button onClick={() => navigate("welcome")} className="btn-ghost flex items-center gap-1.5 text-fleur-ink/50 text-[10px] hover:bg-fleur-blush/50 p-2 rounded-full">
               <ArrowLeft className="w-3 h-3" /> Exit
             </button>
             <div className="flex items-center gap-1.5 text-fleur-ink/70">
-              <div className="w-8 h-8 rounded-full bg-fleur-rose flex items-center justify-center text-[10px] font-bold text-white shadow-[0_4px_12px_rgba(212,165,165,0.35)] animate-bounce-gentle">
+              <div className="w-8 h-8 rounded-full bg-fleur-rose flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white shadow-[0_4px_12px_rgba(212,165,165,0.35)] animate-bounce-gentle">
                 {step + 1}
               </div>
-              <span className="text-[10px] font-semibold tracking-tight leading-none uppercase">Photo {step + 1} of {TOTAL}</span>
+              <span className="text-[9px] md:text-[10px] font-semibold tracking-tight leading-none uppercase">Photo {step + 1} of {TOTAL}</span>
             </div>
             <div className="w-8 h-8 flex items-center justify-center"></div>
           </div>
@@ -314,14 +332,14 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Main layout: camera top-center-left, captured photos right */}
         {!previewOpen && (
-          <div className="relative flex items-start gap-8 mt-[72px] h-[calc(100vh-72px)] w-full p-2 lg:p-8 z-0">
+          <div className="relative flex flex-col md:flex-row items-start gap-6 mt-[64px] h-[calc(100vh-64px)] w-full p-2 md:p-8 z-0 pb-[env(safe-area-inset-bottom)]">
             {/* Camera monitor — centered top */}
-            <div className="relative flex-shrink-0 w-full max-w-[900px] aspect-video rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden mt-[20px]">
+            <div className="relative flex-shrink-0 w-full md:max-w-[900px] aspect-video rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden mt-2 md:mt-0">
                   {cameraEnabled ? (
                     <>
                       <CameraPreview ref={cameraRef} active={true} />
                       <div
-                        className="fixed inset-0 z-[60] bg-[#FFFFFF] pointer-events-none"
+                        className="absolute inset-0 z-[60] bg-[#FFFFFF] pointer-events-none"
                         style={{
                           opacity: flashOpacity,
                           transition: "opacity 250ms ease-out",
@@ -335,7 +353,7 @@ export default function PhotoboothPage({ navigate }) {
                   <div className="w-20 h-20 rounded-full bg-fleur-blush flex items-center justify-center mb-6 text-fleur-rose font-bold text-2xl shadow-lg animate-bounce-gentle">
                     <Camera className="w-10 h-10" />
                   </div>
-                  <button onClick={enableCamera} className="btn-primary px-10 py-5 text-lg flex flex-col items-center gap-3 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]">
+                  <button onClick={enableCamera} className="btn-primary px-10 py-5 text-base md:text-lg flex flex-col items-center gap-3 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]">
                     <span className="font-semibold">Turn on camera</span>
                     <span className="text-xs text-white/70">Allow camera access to capture photos</span>
                   </button>
@@ -344,7 +362,7 @@ export default function PhotoboothPage({ navigate }) {
             </div>
 
             {/* Captured photos sidebar */}
-            <div className="ml-6 hidden lg:flex flex-col items-center gap-4 pt-2">
+            <div className="ml-0 md:ml-6 hidden md:flex flex-col items-center gap-4 pt-2">
               <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-2">Captured</div>
               <div className="flex flex-col gap-4 w-full max-w-xs">
                 {Array.from({ length: TOTAL }).map((_, i) => (
@@ -375,7 +393,7 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Bottom controls */}
         {!previewOpen && (
-          <div className="px-6 py-8 z-10 flex flex-col items-center justify-between w-full max-w-[900px] gap-6">
+          <div className="px-4 py-6 md:px-6 md:py-8 z-10 flex flex-col items-center justify-between w-full gap-6">
             <div className="flex items-center gap-4 w-full">
               <div className="flex-1 bg-fleur-blush rounded-full h-3 overflow-hidden border border-fleur-blush/40">
                 <div className="h-full bg-fleur-rose rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(212,165,165,0.5)]" style={{ width: `${progress}%` }} />
@@ -411,8 +429,12 @@ export default function PhotoboothPage({ navigate }) {
               {allDone && (
                 <button onClick={async () => {
                   setSaving(true);
-                  await goToResults();
-                  setSaving(false);
+                  try {
+                    await goToResults();
+                  } finally {
+                    setSaveProgress(100);
+                    setSaving(false);
+                  }
                 }} className="btn-primary px-10 py-4 text-base shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]">
                   Proceed to strips
                 </button>
@@ -428,7 +450,7 @@ export default function PhotoboothPage({ navigate }) {
               </div>
               <h2 className="font-display font-bold text-xl text-fleur-ink mb-3">Your photos are being configured...</h2>
               <div className="w-48 h-2 bg-fleur-blush rounded-full overflow-hidden border border-fleur-blush/40 mt-4">
-                <div className="h-full bg-fleur-rose rounded-full transition-all duration-300 w-[60%]"></div>
+                <div className="h-full bg-fleur-rose rounded-full shadow-[0_0_15px_rgba(212,165,165,0.5)] transition-all duration-500" style={{ width: `${saveProgress}%` }} />
               </div>
             </div>
           </div>

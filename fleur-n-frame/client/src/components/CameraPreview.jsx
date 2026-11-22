@@ -133,8 +133,8 @@ CameraPreview.displayName = "CameraPreview";
 export function CountdownOverlay({ n }) {
   if (n <= 0) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-      <div className="text-[8rem] font-display font-black text-white drop-shadow-[0_0_30px_rgba(212,165,165,0.6)] animate-pulse-soft">
+    <div className="absolute inset-0 z-[61] flex items-center justify-center pointer-events-none">
+      <div className="text-[6rem] md:text-[8rem] font-display font-black text-white drop-shadow-[0_0_30px_rgba(212,165,165,0.6)] animate-pulse-soft animate-countdown-scale">
         {n}
       </div>
     </div>
