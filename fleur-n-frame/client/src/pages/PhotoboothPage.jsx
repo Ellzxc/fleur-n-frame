@@ -348,7 +348,7 @@ export default function PhotoboothPage({ navigate }) {
               <div className="flex flex-col gap-4 w-full max-w-xs">
                 {Array.from({ length: TOTAL }).map((_, i) => (
                   <div key={i} className="relative cursor-pointer group flex flex-col items-center gap-2" onClick={() => photos[i] && openPreview(i)}>
-                    <div className={`w-24 h-24 rounded-2xl overflow-hidden border shadow-sm flex items-center justify-center relative transition-all duration-300 ${
+                    <div className={`w-40 aspect-video rounded-2xl overflow-hidden border shadow-sm flex items-center justify-center relative transition-all duration-300 ${
                       photos[i]
                         ? "border-fleur-rose/60 bg-white shadow-[0_4px_12px_rgba(212,165,165,0.25)] scale-105"
                         : "border-2 border-dashed border-fleur-blush/40 bg-fleur-blush/40"
