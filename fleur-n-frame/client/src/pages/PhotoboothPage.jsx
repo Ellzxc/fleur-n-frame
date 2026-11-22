@@ -111,18 +111,28 @@ const SHUTTER_LABELS = {
   silent: "Silent",
 };
 
-const playCountdownTick = (ctx, t) => {
-  const osc = ctx.createOscillator();
-  osc.type = "sine";
-  osc.frequency.setValueAtTime(900, t);
-  osc.frequency.exponentialRampToValueAtTime(700, t + 0.06);
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.12, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-  osc.connect(g);
-  g.connect(ctx.destination);
-  osc.start(t);
-  osc.stop(t + 0.08);
+const playCountdownTick = () => {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+    if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume();
+    const ctx = audioCtxRef.current;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(900, t);
+    osc.frequency.exponentialRampToValueAtTime(700, t + 0.06);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.08);
+  } catch (err) {
+    // Audio synthesis best-effort only.
+  }
 };
 
 export default function PhotoboothPage({ navigate }) {
