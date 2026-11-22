@@ -58,14 +58,14 @@ function MiniStrip({ template }) {
         return (
           <div
             key={f.id || i}
-            className="absolute flex items-center justify-center rounded-[3px] font-black text-[#222] shadow-sm backdrop-blur-sm border border-white/30"
+            className="absolute flex items-center justify-center font-black text-[#222] shadow-sm border border-white/20"
             style={{
               left: `${(f.x || 0) * 100}%`,
               top: `${(f.y || 0) * 100}%`,
               width: `${(f.width || 0) * 100}%`,
               height: `${(f.height || 0) * 100}%`,
               backgroundColor: `${STRIP_COLORS[colorKey]}cc`,
-              textShadow: "0 0 6px rgba(255,255,255,0.75)",
+              textShadow: "0 0 4px rgba(255,255,255,0.8)",
             }}
           >
             <span className="text-[11px] leading-none">{num}</span>
