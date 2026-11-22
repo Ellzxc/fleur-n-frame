@@ -56,7 +56,7 @@ function MiniStrip({ template }) {
         return (
           <div
             key={f.id || i}
-            className="absolute flex items-center justify-center rounded-[6px] font-black text-[#222] shadow-md backdrop-blur-sm border border-white/30"
+            className="absolute flex items-center justify-center rounded-[3px] font-black text-[#222] shadow-sm backdrop-blur-sm border border-white/30"
             style={{
               left: `${(f.x || 0) * 100}%`,
               top: `${(f.y || 0) * 100}%`,
