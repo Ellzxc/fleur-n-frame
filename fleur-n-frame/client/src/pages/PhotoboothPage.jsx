@@ -279,89 +279,97 @@ export default function PhotoboothPage({ navigate }) {
 
   return (
     <>
-      <div className="min-h-screen relative overflow-hidden bg-white">
-        {/* Decorative background */}
-        <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, #f7e8ea 0%, transparent 50%), radial-gradient(circle at 80% 70%, #d4a5a5 0%, transparent 50%)" }} />
+      <div className="min-h-screen relative overflow-hidden bg-[#f7f1e7]">
+        {/* Decorative kiosk background */}
+        <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 25% 30%, #f7e8ea 0%, transparent 50%), radial-gradient(circle at 80% 70%, #d4a5a5 0%, transparent 50%)" }} />
 
         {/* Full-screen photo preview modal */}
         {previewOpen !== null && (
-          <div className="fixed inset-0 z-50 bg-fleur-ink/98 flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in">
-            <div className="relative w-full max-w-[700px] h-[700px] flex items-center justify-center bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden border border-white/10 animate-slide-up">
+          <div className="fixed inset-0 z-50 bg-[#0a0a0a] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+            <div className="relative w-full max-w-[800px] h-[800px] flex items-center justify-center bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden border border-white/10 animate-slide-up">
               <img src={photos[previewOpen]} alt="Preview" className="w-full h-full object-cover" />
-              <button onClick={closePreview} className="absolute top-4 right-4 z-30 bg-fleur-ink/90 text-white rounded-full p-3 hover:bg-fleur-rose/90 transition-all">
+              <button onClick={closePreview} className="absolute top-4 right-4 z-30 bg-[#0a0a0a] text-white rounded-full p-3 hover:bg-fleur-rose/90 transition-all">
                 <XIcon className="w-5 h-5" />
               </button>
             </div>
           </div>
         )}
 
-        {/* Header */}
+        {/* Top bar */}
         {!previewOpen && (
-          <div className="px-6 py-4 z-10 flex justify-between items-start">
-            <button onClick={() => navigate("welcome")} className="btn-ghost flex items-center gap-1.5 text-fleur-ink/50 text-xs hover:bg-fleur-blush/50 p-2">
+          <div className="fixed top-0 left-0 right-0 z-40 px-6 py-4 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-fleur-blush/40">
+            <button onClick={() => navigate("welcome")} className="btn-ghost flex items-center gap-1.5 text-fleur-ink/50 text-xs hover:bg-fleur-blush/50 p-2 rounded-full">
               <ArrowLeft className="w-3 h-3" /> Exit
             </button>
             <div className="flex items-center gap-1.5 text-fleur-ink/70">
-              <div className="w-7 h-7 rounded-full bg-fleur-rose flex items-center justify-center text-[10px] font-bold text-white shadow-[0_4px_12px_rgba(212,165,165,0.35)] animate-bounce-gentle">
+              <div className="w-8 h-8 rounded-full bg-fleur-rose flex items-center justify-center text-[10px] font-bold text-white shadow-[0_4px_12px_rgba(212,165,165,0.35)] animate-bounce-gentle">
                 {step + 1}
               </div>
-              <span className="text-[10px] font-semibold tracking-tight leading-none">Photo {step + 1} of {TOTAL}</span>
+              <span className="text-[10px] font-semibold tracking-tight leading-none uppercase">Photo {step + 1} of {TOTAL}</span>
             </div>
+            <div className="w-8 h-8 flex items-center justify-center"></div>
           </div>
         )}
 
-        {/* Main camera area */}
+        {/* Main layout: camera left, captured photos right */}
         {!previewOpen && (
-          <div className="flex flex-col items-center justify-center flex-1 z-0 relative w-full p-2 lg:p-4">
-            <div className="w-full max-w-[700px] aspect-video relative rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden">
-                  {cameraEnabled ? (
-                    <>
-                      <CameraPreview ref={cameraRef} active={true} />
-                      <div
-                        className="fixed inset-0 z-[60] bg-[#FFFFFF] pointer-events-none"
-                        style={{
-                          opacity: flashOpacity,
-                          transition: "opacity 250ms ease-out",
-                          transform: "translateZ(0)",
-                        }}
-                      />
-                      <CountdownOverlay n={status === "countdown" ? timer : 0} />
-                    </>
-                  ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white">
-                  <div className="w-24 h-24 rounded-full bg-fleur-blush flex items-center justify-center mb-8 text-fleur-rose font-bold text-3xl shadow-lg animate-bounce-gentle">
+          <div className="relative flex flex-1 items-center justify-center p-2 lg:p-4 z-0">
+            {/* Camera monitor - maximized */}
+            <div className="relative flex-1 max-w-[700px] aspect-video rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-fleur-blush/100 bg-[#2a2a2a] overflow-hidden flex items-center justify-center">
+              {cameraEnabled ? (
+                <>
+                  <div className="absolute inset-0 z-20 flex items-center justify-center">
+                    <CameraPreview ref={cameraRef} active={true} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="absolute inset-0 z-[60] bg-[#FFFFFF] pointer-events-none" style={{ opacity: flashOpacity, transition: "opacity 250ms ease-out", transform: "translateZ(0)" }} />
+                  <CountdownOverlay n={status === "countdown" ? timer : 0} />
+                  {!cameraReady && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#1a1a1a]/60 backdrop-blur-sm">
+                      <div className="w-20 h-20 rounded-full bg-fleur-rose flex items-center justify-center mb-6 text-white font-bold text-2xl shadow-lg animate-bounce-gentle">
+                        <Camera className="w-10 h-10" />
+                      </div>
+                      <button onClick={enableCamera} className="px-10 py-6 text-xl font-display font-bold flex flex-col items-center gap-4 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)] active:scale-95 transition-all text-white">
+                        <span className="font-semibold">Turn on camera</span>
+                        <span className="text-xs text-white/70 leading-none">Allow camera access to capture photos</span>
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a]">
+                  <div className="w-24 h-24 rounded-full bg-fleur-rose flex items-center justify-center mb-8 text-white font-bold text-3xl shadow-lg animate-bounce-gentle">
                     <Camera className="w-12 h-12" />
                   </div>
-                  <button onClick={enableCamera} className="w-full max-w-xs px-10 py-6 text-xl font-display font-bold flex flex-col items-center gap-4 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)] active:scale-95 transition-all">
+                  <button onClick={enableCamera} className="w-full max-w-xs px-10 py-6 text-xl font-display font-bold flex flex-col items-center gap-4 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)] active:scale-95 transition-all text-white">
                     <span className="font-semibold">Turn on camera</span>
                     <span className="text-xs text-white/70 leading-none">Allow camera access to capture photos</span>
                   </button>
                 </div>
               )}
+              {/* Camera HUD corners */}
+              <div className="absolute top-4 left-4 z-10 w-6 h-6 border-t-2 border-l-2 border-fleur-rose/50"></div>
+              <div className="absolute top-4 right-4 z-10 w-6 h-6 border-t-2 border-r-2 border-fleur-rose/50"></div>
+              <div className="absolute bottom-4 left-4 z-10 w-6 h-6 border-b-2 border-l-2 border-fleur-rose/50"></div>
+              <div className="absolute bottom-4 right-4 z-10 w-6 h-6 border-b-2 border-r-2 border-fleur-rose/50"></div>
             </div>
 
-            {/* Photo thumbnails - below camera on mobile, side on desktop */}
-            <div className="mt-6 flex flex-col lg:flex-row lg:items-start gap-4">
+            {/* Captured photos sidebar */}
+            <div className="flex-1 max-w-xs ml-4 hidden lg:flex flex-col items-center gap-4 pt-4">
               <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-2">Captured</div>
-              <div className="flex flex-wrap justify-center gap-3">
+              <div className="flex flex-col gap-3 w-full">
                 {Array.from({ length: TOTAL }).map((_, i) => (
-                  <div key={i} className="relative cursor-pointer group flex flex-col items-center gap-2" onClick={() => photos[i] && openPreview(i)}>
-                    <div className={`w-24 h-24 rounded-2xl overflow-hidden border shadow-sm flex items-center justify-center relative transition-all duration-300 ${
-                      photos[i]
-                        ? "border-fleur-rose/60 bg-white shadow-[0_4px_12px_rgba(212,165,165,0.25)] scale-105"
-                        : "border-2 border-dashed border-fleur-blush/40 bg-fleur-blush/40"
-                    }`}>
-                      {photos[i] ? (
-                        <img src={photos[i]} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-fleur-ink/30">
-                          <div className="w-10 h-10 rounded-full border-2 border-dashed border-fleur-ink/20 mb-1" />
-                          <span className="text-[10px] font-medium opacity-60">{i + 1}</span>
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-fleur-rose font-bold text-[10px] shadow-sm border border-white">
-                        Photo {i + 1}
+                  <div key={i} className="relative w-full h-24 rounded-xl overflow-hidden border shadow-sm flex items-center justify-center transition-all duration-300 group relative" style={{ position: "relative" }}>
+                    <div className="absolute inset-0 bg-[#1a1a1a] opacity-50 z-0" />
+                    {photos[i] ? (
+                      <img src={photos[i]} alt={`Photo ${i + 1}`} className="w-full h-full object-cover z-10" />
+                    ) : (
+                      <div className="z-10 flex flex-col items-center justify-center h-full text-fleur-ink/20">
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-fleur-ink/30 mb-1" />
+                        <span className="text-[10px] font-medium opacity-40">{i + 1}</span>
                       </div>
+                    )}
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur px-2 py-0.5 rounded-full text-fleur-rose font-bold text-[10px] shadow-sm border border-white">
+                      Photo {i + 1}
                     </div>
                   </div>
                 ))}
@@ -370,53 +378,54 @@ export default function PhotoboothPage({ navigate }) {
           </div>
         )}
 
-        {/* Bottom controls */}
+        {/* Bottom control bar */}
         {!previewOpen && (
-          <div className="px-6 py-6 z-10 flex flex-col items-center justify-between w-full max-w-[700px] gap-6">
-            <div className="w-full">
-              <div className="flex items-center gap-4 mb-3">
+          <div className="fixed bottom-0 left-0 right-0 z-40 px-6 py-6 bg-white/70 backdrop-blur-md border-t border-fleur-blush/40">
+            <div className="max-w-[700px] mx-auto">
+              {/* Progress */}
+              <div className="flex items-center gap-4 mb-4">
                 <div className="flex-1 bg-fleur-blush rounded-full h-3 overflow-hidden border border-fleur-blush/40">
                   <div className="h-full bg-fleur-rose rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(212,165,165,0.5)]" style={{ width: `${progress}%` }} />
                 </div>
-                <p className="text-[10px] font-bold text-fleur-ink/50 mt-1 uppercase tracking-widest text-center w-full">{taken}/{TOTAL} photos taken</p>
+                <p className="text-[10px] font-bold text-fleur-ink/50 uppercase tracking-widest text-center w-full">{taken}/{TOTAL} photos taken</p>
               </div>
-            </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-              {!cameraEnabled ? null : allDone ? (
-                <div className="flex items-center gap-2 text-fleur-rose font-bold shadow-sm bg-fleur-rose/10 px-4 py-2 rounded-full border border-fleur-rose/30">
-                  <CheckCircle className="w-5 h-5" /> All done!
-                </div>
-              ) : cameraReady ? (
-                <div className="flex items-center gap-2 text-fleur-ink/60 text-[11px]">
-                  <span className="font-medium">
-                    {status === "captured" ? "Captured!" : status === "countdown" ? "Get ready…" : "Camera ready"}
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-fleur-ink/60 text-[11px]">
-                  <span className="font-medium animate-pulse">Enabling camera…</span>
-                </div>
-              )}
+              {/* Status + actions */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+                {!cameraEnabled ? null : allDone ? (
+                  <div className="flex items-center gap-2 text-fleur-rose font-bold shadow-sm bg-fleur-rose/10 px-5 py-2.5 rounded-full border border-fleur-rose/30 animate-bounce-gentle">
+                    <CheckCircle className="w-5 h-5" /> All done!
+                  </div>
+                ) : cameraReady ? (
+                  <div className="flex items-center gap-2 text-fleur-ink/60 text-[11px]">
+                    <span className="font-medium">
+                      {status === "captured" ? "Captured!" : status === "countdown" ? "Get ready…" : "Camera ready"}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-fleur-ink/60 text-[11px]">
+                    <span className="font-medium animate-pulse">Enabling camera…</span>
+                  </div>
+                )}
 
-              {cameraEnabled && status !== "done" && taken > 0 && (
-                <button
-                  onClick={handleRetake}
-                  className="btn-soft px-6 py-3 text-sm flex items-center gap-2 shadow-sm hover:bg-fleur-blush/80"
-                >
-                  <RefreshCw className="w-4 h-4" /> Retake all
-                </button>
-              )}
-              {allDone && (
-                <button onClick={goToResults} className="w-full sm:w-auto px-10 py-5 text-xl font-display font-bold shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)] active:scale-95 transition-all">
-                  Proceed to strips
-                </button>
-              )}
+                {cameraEnabled && status !== "done" && taken > 0 && (
+                  <button
+                    onClick={handleRetake}
+                    className="btn-soft px-6 py-3 text-sm flex items-center gap-2 shadow-sm hover:bg-fleur-blush/80"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Retake all
+                  </button>
+                )}
+                {allDone && (
+                  <button onClick={goToResults} className="w-full sm:w-auto px-10 py-5 text-xl font-display font-bold shadow-[0_20px_40px_rgba(212,165,165,0.4)] hover:shadow-[0_25px_50px_rgba(212,165,165,0.5)] active:scale-95 transition-all animate-bounce-gentle">
+                    Proceed to strips
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
       </div>
-
       <></>
     </>
   );
