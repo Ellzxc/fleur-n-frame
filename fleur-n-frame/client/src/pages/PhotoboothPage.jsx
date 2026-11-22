@@ -313,7 +313,7 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Main layout: camera top-center-left, captured photos right */}
         {!previewOpen && (
-          <div className="relative flex items-center flex-1 z-0 relative w-full max-w-full p-2 lg:p-8">
+          <div className="relative flex items-start gap-8 mt-[72px] h-[calc(100vh-72px)] w-full p-2 lg:p-8 z-0">
             {/* Camera monitor — centered top */}
             <div className="relative flex-shrink-0 w-full max-w-[900px] aspect-video rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden mt-[20px]">
                   {cameraEnabled ? (
