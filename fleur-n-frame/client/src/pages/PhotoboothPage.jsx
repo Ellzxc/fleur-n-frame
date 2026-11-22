@@ -332,9 +332,9 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Main layout: camera top-center-left, captured photos right */}
         {!previewOpen && (
-          <div className="relative flex flex-col md:flex-row items-start gap-6 mt-[64px] h-[calc(100vh-64px)] w-full p-2 md:p-8 z-0 pb-[env(safe-area-inset-bottom)]">
+          <div className="relative flex flex-col md:flex-row items-center gap-6 mt-[56px] min-h-[calc(100vh-112px)] w-full p-2 md:p-8 z-0 pb-[env(safe-area-inset-bottom)]">
             {/* Camera monitor — centered top */}
-            <div className="relative flex-shrink-0 w-full md:max-w-[900px] aspect-video rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden mt-2 md:mt-0">
+            <div className="relative flex-shrink-0 w-full md:max-w-[900px] aspect-video min-h-[240px] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden mt-2 md:mt-0">
                   {cameraEnabled ? (
                     <>
                       <CameraPreview ref={cameraRef} active={true} />
@@ -362,12 +362,12 @@ export default function PhotoboothPage({ navigate }) {
             </div>
 
             {/* Captured photos sidebar */}
-            <div className="ml-0 md:ml-6 hidden md:flex flex-col items-center gap-4 pt-2">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-2">Captured</div>
-              <div className="flex flex-col gap-4 w-full max-w-xs">
+            <div className="mt-4 md:mt-0 md:ml-6 flex flex-col md:flex-col items-center md:items-center gap-4 pt-2 w-full max-w-[520px] md:max-w-none">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-2 md:mb-0 w-full text-center md:text-left">Captured</div>
+              <div className="flex flex-row md:flex-col gap-2 md:gap-4 w-full items-center md:items-center overflow-x-auto md:overflow-visible scrollbar-hide">
                 {Array.from({ length: TOTAL }).map((_, i) => (
                   <div key={i} className="relative cursor-pointer group flex flex-col items-center gap-2" onClick={() => photos[i] && openPreview(i)}>
-                    <div className={`w-40 aspect-video rounded-2xl overflow-hidden border shadow-sm flex items-center justify-center relative transition-all duration-300 ${
+                    <div className={`w-[72px] h-[90px] md:w-40 md:aspect-video rounded-2xl overflow-hidden border shadow-sm flex items-center justify-center relative transition-all duration-300 ${
                       photos[i]
                         ? "border-fleur-rose/60 bg-white shadow-[0_4px_12px_rgba(212,165,165,0.25)] scale-105"
                         : "border-2 border-dashed border-fleur-blush/40 bg-fleur-blush/40"
