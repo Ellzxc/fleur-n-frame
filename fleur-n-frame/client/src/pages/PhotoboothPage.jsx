@@ -149,6 +149,7 @@ export default function PhotoboothPage({ navigate }) {
   const [flashOpacity, setFlashOpacity] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(null);
   const audioCtxRef = useRef(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!cameraEnabled) return;
@@ -408,10 +409,27 @@ export default function PhotoboothPage({ navigate }) {
                 </button>
               )}
               {allDone && (
-                <button onClick={goToResults} className="btn-primary px-10 py-4 text-base shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]">
+                <button onClick={async () => {
+                  setSaving(true);
+                  await goToResults();
+                  setSaving(false);
+                }} className="btn-primary px-10 py-4 text-base shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]">
                   Proceed to strips
                 </button>
               )}
+            </div>
+          </div>
+        )}
+        {saving && (
+          <div className="fixed inset-0 z-50 bg-[#0a0a0a]/90 flex items-center justify-center backdrop-blur-sm animate-fade-in">
+            <div className="flex flex-col items-center justify-center bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden border border-white/10 animate-slide-up px-10 py-8 text-center">
+              <div className="w-8 h-8 rounded-full bg-fleur-rose flex items-center justify-center mb-6 text-white font-bold text-xl shadow-lg animate-bounce-gentle">
+                <RefreshCw className="w-5 h-5" />
+              </div>
+              <h2 className="font-display font-bold text-xl text-fleur-ink mb-3">Your photos are being configured...</h2>
+              <div className="w-48 h-2 bg-fleur-blush rounded-full overflow-hidden border border-fleur-blush/40 mt-4">
+                <div className="h-full bg-fleur-rose rounded-full transition-all duration-300 w-[60%]"></div>
+              </div>
             </div>
           </div>
         )}
