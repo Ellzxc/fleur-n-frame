@@ -68,7 +68,7 @@ function MiniStrip({ template, isSelected }) {
               top: `${(f.y || 0) * 100}%`,
               width: `${(f.width || 0) * 100}%`,
               height: `${(f.height || 0) * 100}%`,
-              backgroundColor: `${STRIP_COLORS[colorKey]}cc`,
+              backgroundColor: STRIP_COLORS[colorKey],
               border: "1px solid rgba(255,255,255,0.35)",
               textShadow: "0 0 4px rgba(255,255,255,0.8)",
             }}
