@@ -24,6 +24,7 @@ const photoSessionSchema = new mongoose.Schema({
   photos: [String],
   created_at: { type: Date, default: Date.now },
 });
+photoSessionSchema.index({ created_at: 1 }, { expireAfterSeconds: 86400 });
 
 const photoSchema = new mongoose.Schema({
   photoId: { type: String, unique: true, index: true },
@@ -31,6 +32,7 @@ const photoSchema = new mongoose.Schema({
   publicId: String,
   createdAt: { type: Date, default: Date.now },
 });
+photoSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
 
 const Template = mongoose.model("Template", templateSchema);
 const PhotoSession = mongoose.model("PhotoSession", photoSessionSchema);
@@ -118,6 +120,10 @@ const db = {
 
   getPhoto(photoId) {
     return Photo.findOne({ photoId }).lean().then((p) => p || null);
+  },
+
+  deletePhoto(photoId) {
+    return Photo.findOneAndDelete({ photoId }).lean().then((p) => p || null);
   },
 };
 

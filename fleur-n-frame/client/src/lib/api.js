@@ -35,4 +35,5 @@ export const api = {
   deletePhotoSession: (sessionId) => request(`/photos/${sessionId}`, { method: "DELETE" }),
   shareUpload: (imageDataUrl) => request("/share/upload", { method: "POST", body: JSON.stringify({ image: imageDataUrl }) }),
   getSharePhoto: (photoId) => request(`/share/${photoId}`),
+  deleteSharePhoto: (photoId) => request(`/share/${photoId}`, { method: "DELETE" }),
 };

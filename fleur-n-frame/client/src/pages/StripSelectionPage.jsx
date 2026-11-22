@@ -196,11 +196,18 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   const allTaken = photos.every(Boolean);
   const takenCount = photos.filter(Boolean).length;
 
-  const handleIdleDone = useCallback(() => {
+  const handleAutoReset = useCallback(async () => {
     setIdleActive(false);
+    if (sharePhotoId) {
+      try { await api.deleteSharePhoto(sharePhotoId); } catch (e) { /* best-effort */ }
+    }
     resetPhotos();
     navigate("welcome");
-  }, [resetPhotos, navigate]);
+  }, [resetPhotos, navigate, sharePhotoId]);
+
+  const handleIdleDone = useCallback(() => {
+    handleAutoReset();
+  }, [handleAutoReset]);
 
   const scrollStrip = (dir) => {
     const el = scrollRef.current;
@@ -222,9 +229,7 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
     idleTimerRef.current = setInterval(() => {
       setIdleSeconds((s) => {
         if (s <= 1) {
-          setIdleActive(false);
-          resetPhotos();
-          navigate("welcome");
+          handleAutoReset();
           return 0;
         }
         return s - 1;
@@ -237,7 +242,7 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
       window.removeEventListener("click", onActivity);
       window.removeEventListener("keydown", onActivity);
     };
-  }, [allTaken, resetIdle, resetPhotos, navigate]);
+  }, [allTaken, resetIdle, handleAutoReset]);
 
   if (error) {
     return (
@@ -254,8 +259,22 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
   }
 
   return (
-    <div className="min-h-screen bg-fleur-cream">
+      <div className="min-h-screen bg-fleur-cream">
       <div className="blob top-[-15%] right-[-10%] w-[420px] h-[420px] rounded-full bg-fleur-rose/20 pointer-events-none" />
+      {idleActive && (
+        <div className="fixed bottom-0 left-0 right-0 h-2 z-50">
+          <div className="h-full bg-fleur-blush rounded-none border-t border-fleur-blush/40 overflow-hidden">
+            <div
+              className="h-full bg-fleur-rose shadow-[0_0_15px_rgba(212,165,165,0.5)] transition-all duration-1000 linear"
+              style={{ width: `${Math.max(0, (idleSeconds / 30) * 100)}%` }}
+            />
+          </div>
+          <div className="absolute inset-x-0 top-3 z-10 flex justify-between px-4 text-[10px] font-bold text-fleur-ink/50 uppercase tracking-widest pointer-events-none">
+            <span>Resetting for next guest</span>
+            <span>{idleSeconds}s</span>
+          </div>
+        </div>
+      )}
 
       <div className="relative z-10">
         <div className="px-4 sm:px-6 py-4 flex items-center justify-between">

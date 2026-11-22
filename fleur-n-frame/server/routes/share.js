@@ -53,4 +53,24 @@ router.get("/:photoId", async (req, res) => {
   }
 });
 
+// Delete a shared photo from Cloudinary + MongoDB when the customer is done.
+router.delete("/:photoId", async (req, res) => {
+  try {
+    const photo = await db.getPhoto(req.params.photoId);
+    if (!photo) return res.status(404).json({ error: "Photo not found" });
+    if (photo.publicId) {
+      try {
+        await cloudinary.uploader.destroy(photo.publicId);
+      } catch (err) {
+        console.error("cloudinary delete error:", err.message);
+      }
+    }
+    await db.deletePhoto(req.params.photoId);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("share delete error:", err);
+    return res.status(500).json({ error: err.message || "Share delete failed" });
+  }
+});
+
 module.exports = router;
