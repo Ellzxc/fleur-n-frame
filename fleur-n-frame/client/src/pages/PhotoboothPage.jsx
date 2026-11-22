@@ -279,7 +279,7 @@ export default function PhotoboothPage({ navigate }) {
 
   return (
     <>
-      <div className="min-h-screen relative overflow-hidden bg-[#f7f1e7]">
+      <div className="min-h-screen relative overflow-hidden bg-[#f7f1e7] flex flex-col items-center h-full">
         {/* Decorative kiosk background */}
         <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 25% 30%, #f7e8ea 0%, transparent 50%), radial-gradient(circle at 80% 70%, #d4a5a5 0%, transparent 50%)" }} />
 
@@ -315,7 +315,7 @@ export default function PhotoboothPage({ navigate }) {
         {!previewOpen && (
           <div className="relative flex items-center flex-1 z-0 relative w-full max-w-full p-2 lg:p-8">
             {/* Camera monitor — centered top */}
-            <div className="relative flex-shrink-0 max-w-[900px] aspect-video rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden mt-[20px]">
+            <div className="relative flex-shrink-0 w-full max-w-[900px] aspect-video rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden mt-[20px]">
                   {cameraEnabled ? (
                     <>
                       <CameraPreview ref={cameraRef} active={true} />
