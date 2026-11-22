@@ -32,7 +32,7 @@ export default function PhotoboothPage({ navigate }) {
     setStep(0);
     setStatus("idle");
     setTimer(COUNTDOWN_SECONDS);
-    setFlash(false);
+    setFlashOpacity(0);
   }, [resetPhotos]);
 
   const enableCamera = useCallback(() => {

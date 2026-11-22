@@ -59,6 +59,7 @@ function MiniStrip({ template, isSelected }) {
         <div className="absolute inset-0 bg-[#2c2a2c]" />
       )}
       {frames.map((f, i) => {
+        if (!f || typeof f !== "object") return null;
         const num = f.photoNumber || i + 1;
         const colorKey = ((num - 1) % 4) + 1;
         return (
