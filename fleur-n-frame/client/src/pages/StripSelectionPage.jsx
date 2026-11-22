@@ -31,53 +31,52 @@ const STRIP_COLORS = {
 };
 
 function MiniStrip({ template, isSelected }) {
-  const canvasRef = useRef(null);
   const frames = Array.isArray(template.frames) ? template.frames : [];
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !template?.original_path) return;
-    let cancelled = false;
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      if (cancelled) return;
-      const w = 160;
-      const h = Math.max(1, Math.round(w * (img.naturalHeight / img.naturalWidth)));
-      canvas.width = w;
-      canvas.height = h;
-      ctx.clearRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-      frames.forEach((f) => {
-        const num = f.photoNumber || 1;
-        const colorKey = ((num - 1) % 4) + 1;
-        const x = (f.x || 0) * w;
-        const y = (f.y || 0) * h;
-        const fw = Math.max((f.width || 0) * w, 1);
-        const fh = Math.max((f.height || 0) * h, 1);
-        ctx.fillStyle = STRIP_COLORS[colorKey] + "cc";
-        ctx.fillRect(x, y, fw, fh);
-        ctx.strokeStyle = "rgba(255,255,255,0.4)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x + 0.5, y + 0.5, Math.max(fw - 1, 0), Math.max(fh - 1, 0));
-        ctx.fillStyle = "#222";
-        ctx.font = "bold 13px ui-sans-serif, system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(String(num), x + fw / 2, y + fh / 2);
-      });
-    };
-    img.onerror = () => {};
-    img.src = templateImageUrl(template.original_path);
-    return () => {
-      cancelled = true;
-    };
-  }, [template]);
+  const [aspect, setAspect] = useState(9 / 16);
+  const hasImage = Boolean(template?.original_path);
 
   return (
-    <div className="relative rounded-xl overflow-hidden bg-[#2c2a2c] shadow-inner">
-      <canvas ref={canvasRef} className="block w-full h-auto" width={160} height={240} />
+    <div
+      className="relative rounded-xl overflow-hidden bg-[#2c2a2c] shadow-inner"
+      style={{ aspectRatio: aspect }}
+    >
+      {hasImage ? (
+        <img
+          src={templateImageUrl(template.original_path)}
+          alt="Template preview"
+          className="block w-full h-full object-cover"
+          onLoad={(e) => {
+            const { naturalWidth: nw, naturalHeight: nh } = e.currentTarget;
+            if (nw && nh) setAspect(nw / nh);
+          }}
+          onError={(e) => {
+            e.currentTarget.style.opacity = "0";
+          }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-[#2c2a2c]" />
+      )}
+      {frames.map((f, i) => {
+        const num = f.photoNumber || i + 1;
+        const colorKey = ((num - 1) % 4) + 1;
+        return (
+          <div
+            key={f.id || i}
+            className="absolute flex items-center justify-center font-black text-[#222]"
+            style={{
+              left: `${(f.x || 0) * 100}%`,
+              top: `${(f.y || 0) * 100}%`,
+              width: `${(f.width || 0) * 100}%`,
+              height: `${(f.height || 0) * 100}%`,
+              backgroundColor: `${STRIP_COLORS[colorKey]}cc`,
+              border: "1px solid rgba(255,255,255,0.35)",
+              textShadow: "0 0 4px rgba(255,255,255,0.8)",
+            }}
+          >
+            <span className="text-[11px] leading-none">{num}</span>
+          </div>
+        );
+      })}
       {isSelected && (
         <div className="absolute inset-0 rounded-xl ring-2 ring-inset ring-white/70 pointer-events-none" />
       )}
