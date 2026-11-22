@@ -311,50 +311,72 @@ export default function PhotoboothPage({ navigate }) {
           </div>
         )}
 
-        {/* Main layout: camera center-left, captured photos right */}
+        {/* Main layout: camera top-center, captured photos bottom */}
         {!previewOpen && (
-          <div className="relative flex items-center justify-center gap-8 mt-[72px] h-[calc(100vh-72px)] w-full p-2 lg:p-8 z-0">
-            {/* Camera monitor — center-left, larger scale */}
-            <div className="relative flex-shrink-0 max-w-[700px] aspect-video rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] border border-fleur-blush/100 bg-[#2a2a2a] overflow-hidden flex items-center justify-center">
-              <div className="absolute inset-0 z-20 flex items-center justify-center">
-                <CameraPreview ref={cameraRef} active={true} className="w-full h-full object-cover" />
-              </div>
-              <div className="absolute inset-0 z-[60] bg-[#FFFFFF] pointer-events-none" style={{ opacity: flashOpacity, transition: "opacity 250ms ease-out", transform: "translateZ(0)" }} />
-              {/* Countdown aligned to camera monitor */}
-              <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-                <CountdownOverlay n={status === "countdown" ? timer : 0} />
-              </div>
-              {!cameraReady && (
-                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#1a1a1a]/70 backdrop-blur-sm">
-                  <div className="w-24 h-24 rounded-full bg-fleur-rose flex items-center justify-center mb-6 text-white font-bold text-3xl shadow-lg animate-bounce-gentle">
+          <div className="relative flex flex-col items-center h-full w-full p-2 lg:p-8 z-0">
+            {/* Camera monitor — large, center-top */}
+            <div className="relative flex-shrink-0 max-w-[850px] aspect-video rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] border border-fleur-blush/100 bg-[#2a2a2a] overflow-hidden flex items-center justify-center">
+              {cameraEnabled ? (
+                <>
+                  <div className="absolute inset-0 z-20 flex items-center justify-center">
+                    <CameraPreview ref={cameraRef} active={true} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="absolute inset-0 z-[60] bg-[#FFFFFF] pointer-events-none" style={{ opacity: flashOpacity, transition: "opacity 250ms ease-out", transform: "translateZ(0)" }} />
+                  <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+                    <CountdownOverlay n={status === "countdown" ? timer : 0} />
+                  </div>
+                  {!cameraReady && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#1a1a1a]/70 backdrop-blur-sm">
+                      <div className="w-24 h-24 rounded-full bg-fleur-rose flex items-center justify-center mb-6 text-white font-bold text-3xl shadow-lg animate-bounce-gentle">
+                        <Camera className="w-12 h-12" />
+                      </div>
+                      <button onClick={enableCamera} className="px-10 py-6 text-xl font-display font-bold flex flex-col items-center gap-4 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)] active:scale-95 transition-all text-white">
+                        <span className="font-semibold">Turn on camera</span>
+                        <span className="text-xs text-white/70 leading-none">Allow camera access to capture photos</span>
+                      </button>
+                    </div>
+                  )}
+                  {/* Camera HUD corners */}
+                  <div className="absolute top-4 left-4 z-10 w-7 h-7 border-t-2 border-l-2 border-fleur-rose/60"></div>
+                  <div className="absolute top-4 right-4 z-10 w-7 h-7 border-t-2 border-r-2 border-fleur-rose/60"></div>
+                  <div className="absolute bottom-4 left-4 z-10 w-7 h-7 border-b-2 border-l-2 border-fleur-rose/60"></div>
+                  <div className="absolute bottom-4 right-4 z-10 w-7 h-7 border-b-2 border-r-2 border-fleur-rose/60"></div>
+                  {/* Retake button top-right of camera */}
+                  {cameraReady && cameraEnabled && taken > 0 && (
+                    <button
+                      onClick={handleRetake}
+                      className="absolute top-4 right-4 z-50 btn-soft px-6 py-2 text-sm flex items-center gap-2 shadow-sm bg-white/90 backdrop-blur hover:bg-white transition-all"
+                    >
+                      <RefreshCw className="w-4 h-4" /> Retake all
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a]">
+                  <div className="w-24 h-24 rounded-full bg-fleur-rose flex items-center justify-center mb-8 text-white font-bold text-3xl shadow-lg animate-bounce-gentle">
                     <Camera className="w-12 h-12" />
                   </div>
-                  <button onClick={enableCamera} className="px-10 py-6 text-xl font-display font-bold flex flex-col items-center gap-4 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)] active:scale-95 transition-all text-white">
+                  <button onClick={enableCamera} className="w-full max-w-xs px-10 py-6 text-xl font-display font-bold flex flex-col items-center gap-4 shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)] active:scale-95 transition-all text-white">
                     <span className="font-semibold">Turn on camera</span>
                     <span className="text-xs text-white/70 leading-none">Allow camera access to capture photos</span>
                   </button>
                 </div>
               )}
-              {/* Camera HUD corners */}
-              <div className="absolute top-4 left-4 z-10 w-7 h-7 border-t-2 border-l-2 border-fleur-rose/60"></div>
-              <div className="absolute top-4 right-4 z-10 w-7 h-7 border-t-2 border-r-2 border-fleur-rose/60"></div>
-              <div className="absolute bottom-4 left-4 z-10 w-7 h-7 border-b-2 border-l-2 border-fleur-rose/60"></div>
-              <div className="absolute bottom-4 right-4 z-10 w-7 h-7 border-b-2 border-r-2 border-fleur-rose/60"></div>
             </div>
 
-            {/* Captured photos sidebar — accurate rectangles scaled down from camera monitor */}
-            <div className="flex-shrink-0 hidden lg:flex flex-col items-center gap-4 pt-2">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-1">Captured</div>
-              <div className="flex flex-col gap-4 w-full max-w-xs">
+            {/* Captured photos row — bottom center */}
+            <div className="relative flex flex-col items-center gap-4 pt-4 pb-20">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-2">Captured</div>
+              <div className="flex flex-row gap-4 w-full max-w-[800px] justify-center">
                 {Array.from({ length: TOTAL }).map((_, i) => (
-                  <div key={i} className="relative w-[110px] aspect-video rounded-xl overflow-hidden border shadow-sm flex items-center justify-center transition-all duration-300 group cursor-pointer" onClick={() => photos[i] && openPreview(i)}>
+                  <div key={i} className="relative w-40 h-48 rounded-xl overflow-hidden border shadow-sm flex items-center justify-center transition-all duration-300 group cursor-pointer" onClick={() => photos[i] && openPreview(i)}>
                     <div className="absolute inset-0 bg-[#1a1a1a] opacity-50 z-0" />
                     {photos[i] ? (
                       <img src={photos[i]} alt={`Photo ${i + 1}`} className="w-full h-full object-cover z-10" />
                     ) : (
                       <div className="z-10 flex flex-col items-center justify-center h-full text-fleur-ink/20">
-                        <div className="w-8 h-8 rounded-full border-2 border-dashed border-fleur-ink/30 mb-1" />
-                        <span className="text-[9px] font-medium opacity-40">{i + 1}</span>
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-fleur-ink/30 mb-1" />
+                        <span className="text-[10px] font-medium opacity-40">{i + 1}</span>
                       </div>
                     )}
                     <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur px-2 py-0.5 rounded-full text-fleur-rose font-bold text-[9px] shadow-sm border border-white">
@@ -369,11 +391,11 @@ export default function PhotoboothPage({ navigate }) {
 
         {/* Bottom control bar */}
         {!previewOpen && (
-          <div className="fixed bottom-0 left-0 right-0 z-40 px-6 py-5 bg-white/70 backdrop-blur-md border-t border-fleur-blush/50">
+          <div className="fixed bottom-0 left-0 right-0 z-40 px-6 py-6 bg-white/70 backdrop-blur-md border-t border-fleur-blush/50">
             <div className="max-w-[850px] mx-auto">
               {/* Progress */}
               <div className="flex items-center gap-4 mb-4">
-                <div className="flex-1 bg-fleur-blush rounded-full h-2 overflow-hidden border border-fleur-blush/40">
+                <div className="flex-1 bg-fleur-blush rounded-full h-3 overflow-hidden border border-fleur-blush/40">
                   <div className="h-full bg-fleur-rose rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(212,165,165,0.5)]" style={{ width: `${progress}%` }} />
                 </div>
                 <p className="text-[10px] font-bold text-fleur-ink/50 uppercase tracking-widest text-center w-full">{taken}/{TOTAL} photos taken</p>
@@ -397,14 +419,6 @@ export default function PhotoboothPage({ navigate }) {
                   </div>
                 )}
 
-                {cameraEnabled && status !== "done" && taken > 0 && (
-                  <button
-                    onClick={handleRetake}
-                    className="btn-soft px-6 py-3 text-sm flex items-center gap-2 shadow-sm hover:bg-fleur-blush/80"
-                  >
-                    <RefreshCw className="w-4 h-4" /> Retake all
-                  </button>
-                )}
                 {allDone && (
                   <button onClick={goToResults} className="w-full sm:w-auto px-11 py-5 text-xl font-display font-bold shadow-[0_20px_40px_rgba(212,165,165,0.4)] hover:shadow-[0_25px_50px_rgba(212,165,165,0.5)] active:scale-95 transition-all animate-bounce-gentle">
                     Proceed to strips
