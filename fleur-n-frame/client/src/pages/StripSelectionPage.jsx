@@ -193,6 +193,21 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
     setIdleActive(true);
   }, []);
 
+  const allTaken = photos.every(Boolean);
+  const takenCount = photos.filter(Boolean).length;
+
+  const handleIdleDone = useCallback(() => {
+    setIdleActive(false);
+    resetPhotos();
+    navigate("welcome");
+  }, [resetPhotos, navigate]);
+
+  const scrollStrip = (dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.max(el.clientWidth * 0.6, 240), behavior: "smooth" });
+  };
+
   useEffect(() => {
     if (!allTaken) {
       setIdleActive(false);
@@ -223,21 +238,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
       window.removeEventListener("keydown", onActivity);
     };
   }, [allTaken, resetIdle, resetPhotos, navigate]);
-
-  const handleIdleDone = useCallback(() => {
-    setIdleActive(false);
-    resetPhotos();
-    navigate("welcome");
-  }, [resetPhotos, navigate]);
-
-  const scrollStrip = (dir) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir * Math.max(el.clientWidth * 0.6, 240), behavior: "smooth" });
-  };
-
-  const allTaken = photos.every(Boolean);
-  const takenCount = photos.filter(Boolean).length;
 
   if (error) {
     return (
