@@ -311,10 +311,11 @@ export default function PhotoboothPage({ navigate }) {
           </div>
         )}
 
-        {/* Main camera area */}
+        {/* Main layout: camera top-center-left, captured photos right */}
         {!previewOpen && (
-          <div className="flex flex-col items-center justify-center flex-1 z-0 relative w-full max-w-full p-4 lg:p-8">
-            <div className="w-full max-w-[900px] aspect-video relative rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden">
+          <div className="relative flex items-center flex-1 z-0 relative w-full max-w-full p-2 lg:p-8">
+            {/* Camera monitor — centered top */}
+            <div className="relative flex-shrink-0 max-w-[900px] aspect-video rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-fleur-blush/80 bg-white overflow-hidden mt-[20px]">
                   {cameraEnabled ? (
                     <>
                       <CameraPreview ref={cameraRef} active={true} />
@@ -341,10 +342,10 @@ export default function PhotoboothPage({ navigate }) {
               )}
             </div>
 
-            {/* Photo thumbnails - below camera on mobile, side on desktop */}
-            <div className="mt-6 flex flex-col lg:flex-row lg:items-start gap-4">
+            {/* Captured photos sidebar */}
+            <div className="ml-6 hidden lg:flex flex-col items-center gap-4 pt-2">
               <div className="text-[10px] font-bold uppercase tracking-widest text-fleur-ink/40 mb-2">Captured</div>
-              <div className="flex flex-wrap justify-center gap-3">
+              <div className="flex flex-col gap-4 w-full max-w-xs">
                 {Array.from({ length: TOTAL }).map((_, i) => (
                   <div key={i} className="relative cursor-pointer group flex flex-col items-center gap-2" onClick={() => photos[i] && openPreview(i)}>
                     <div className={`w-24 h-24 rounded-2xl overflow-hidden border shadow-sm flex items-center justify-center relative transition-all duration-300 ${
