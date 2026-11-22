@@ -1,26 +1,76 @@
-import { useCallback, useEffect, useState } from "react";
-import { Download, Image, RefreshCw, Heart, FileText, ChevronLeft, CheckCircle } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Download,
+  Image,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Camera,
+  Sparkles,
+  SlidersHorizontal,
+} from "lucide-react";
 import { api } from "@/lib/api";
 import { usePhotos } from "@/context/PhotoContext";
 import { PhotoStripRenderer } from "@/components/PhotoStripRenderer";
 import { jsPDF } from "jspdf";
 
 const FILTERS = [
-  { id: "none", label: "None" },
+  { id: "none", label: "Original" },
   { id: "bw", label: "Black & White" },
   { id: "vintage", label: "Vintage" },
 ];
+
+const STRIP_COLORS = {
+  1: "#E8A0A8",
+  2: "#9FB8A0",
+  3: "#E5CE85",
+  4: "#B3A9D6",
+};
+
+function MiniStrip({ template }) {
+  const frames = Array.isArray(template.frames) ? template.frames : [];
+  if (frames.length === 0) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center text-white/30 text-[10px] font-medium">
+        No frames
+      </div>
+    );
+  }
+  return (
+    <>
+      {frames.map((f, i) => {
+        const num = f.photoNumber || i + 1;
+        const colorKey = ((num - 1) % 4) + 1;
+        return (
+          <div
+            key={f.id || i}
+            className="absolute flex items-center justify-center rounded-[4px] font-bold text-[#3a2c2c] shadow-sm ring-1 ring-black/5"
+            style={{
+              left: `${(f.x || 0) * 100}%`,
+              top: `${(f.y || 0) * 100}%`,
+              width: `${(f.width || 0) * 100}%`,
+              height: `${(f.height || 0) * 100}%`,
+              backgroundColor: STRIP_COLORS[colorKey],
+            }}
+          >
+            <span className="text-[11px] leading-none">{num}</span>
+          </div>
+        );
+      })}
+    </>
+  );
+}
 
 export default function StripSelectionPage({ navigate, sessionId: passedSessionId }) {
   const { photos } = usePhotos();
   const [templates, setTemplates] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [ready, setReady] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
-  const [sessionId, setSessionId] = useState(passedSessionId || null);
   const [filter, setFilter] = useState("none");
+  const scrollRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -39,7 +89,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
 
   const handleRendererReady = useCallback((url) => {
     setPreviewUrl(url);
-    setReady(Boolean(url));
   }, []);
 
   const handleSavePDF = useCallback(async () => {
@@ -76,7 +125,14 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
     document.body.removeChild(link);
   }, [previewUrl]);
 
+  const scrollStrip = (dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.max(el.clientWidth * 0.6, 240), behavior: "smooth" });
+  };
+
   const allTaken = photos.every(Boolean);
+  const takenCount = photos.filter(Boolean).length;
 
   if (error) {
     return (
@@ -85,139 +141,189 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
           <Image className="mx-auto w-14 h-14 text-fleur-rose mb-6" />
           <h2 className="font-display font-bold text-2xl text-fleur-ink mb-3">Unable to load designs</h2>
           <p className="text-fleur-ink/60 mb-8">{error}</p>
-          <button onClick={load} className="btn-primary w-full mb-4">
-            Try again
-          </button>
-          <button onClick={() => navigate("welcome")} className="btn-ghost w-full text-sm">
-            Back to home
-          </button>
+          <button onClick={load} className="btn-primary w-full mb-4">Try again</button>
+          <button onClick={() => navigate("welcome")} className="btn-ghost w-full text-sm">Back to home</button>
         </div>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-fleur-cream">
-        <div className="px-6 py-4 z-10 flex items-center justify-between">
-          <button onClick={() => navigate("welcome")} className="btn-ghost flex items-center gap-2 text-fleur-ink/70 hover:bg-fleur-blush/50 text-sm">
+    <div className="min-h-screen bg-fleur-cream">
+      <div className="blob top-[-15%] right-[-10%] w-[420px] h-[420px] rounded-full bg-fleur-rose/20 pointer-events-none" />
+
+      <div className="relative z-10">
+        <div className="px-4 sm:px-6 py-4 flex items-center justify-between">
+          <button
+            onClick={() => navigate("welcome")}
+            className="btn-ghost flex items-center gap-2 text-fleur-ink/70 hover:bg-fleur-blush/50 text-sm"
+          >
             <ChevronLeft className="w-4 h-4" /> Back to home
           </button>
-          <div className="flex items-center gap-2 text-xs font-bold text-fleur-ink/40 uppercase tracking-widest">
-            {photos.filter(Boolean).length} / 4 photos captured
+          <div className="flex items-center gap-2 text-xs font-bold text-fleur-ink/50 uppercase tracking-widest">
+            <Camera className="w-3.5 h-3.5 text-fleur-rose" />
+            {takenCount} / 4 photos captured
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <header className="mb-10 text-center">
-            <h2 className="font-display font-bold text-3xl md:text-4xl text-fleur-ink mb-3 tracking-tight animate-slide-up">Choose your design</h2>
-            <p className="text-fleur-ink/60 animate-slide-up delay-100">Preview your four pictures inside each published photo strip.</p>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-16 pt-4">
+          <header className="mb-8 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-fleur-rose/10 border border-fleur-rose/25 text-fleur-rose text-[10px] font-bold uppercase tracking-widest mb-4 animate-fade-in">
+              <Sparkles className="w-3 h-3" /> Final step
+            </div>
+            <h1 className="font-display font-bold text-3xl md:text-4xl text-fleur-ink mb-3 tracking-tight animate-slide-up text-balance">
+              Choose your design
+            </h1>
+            <p className="text-fleur-ink/60 max-w-lg mx-auto animate-slide-up delay-100">
+              Pick a template to see your photos come together into a polished strip.
+            </p>
           </header>
 
-          {/* Filter selector */}
-          {allTaken && (
-            <div className="mb-8 flex items-center justify-center gap-3 animate-slide-up">
-              <span className="text-xs font-bold text-fleur-ink/50 uppercase tracking-widest">Photo Filter</span>
-              {FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFilter(f.id)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
-                    filter === f.id
-                      ? "bg-fleur-rose border-fleur-rose text-white shadow-sm"
-                      : "bg-white border-fleur-blush/40 text-fleur-ink/60 hover:bg-fleur-blush/100"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {templates.map((t) => {
-              const isSelected = selectedId === t.id;
-              return (
-                <div
-                  key={t.id}
-                  onClick={() => setSelectedId(t.id)}
-                  className={`card-hover cursor-pointer group relative overflow-hidden animate-slide-up ${
-                    isSelected ? "ring-3 ring-fleur-rose bg-fleur-blush/40" : ""
-                  }`}
-                  style={{ animationDelay: `${templates.indexOf(t) * 100}ms` }}
-                >
-                  <div className="h-64 overflow-hidden relative group-hover:scale-[1.02] transition-transform duration-300">
-                    <div className="absolute inset-0 bg-fleur-blush/30 group-hover:bg-fleur-blush/50 transition-colors"></div>
-                    <PhotoStripRenderer
-                      template={t}
-                      photos={photos}
-                      maxDimension={600}
-                      filter={filter}
-                    />
-                    <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-fleur-ink text-xs font-semibold shadow-sm border border-white/50">
-                      <Heart className="w-3 h-3 fill-current" /> {t.frames?.length || 0} frames
-                    </div>
-                    {isSelected && (
-                      <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1 bg-fleur-rose text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
-                        <CheckCircle className="w-3 h-3" /> Selected
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <h3 className="font-display font-bold text-lg text-fleur-ink mb-1">{t.name}</h3>
-                      <p className={`text-xs font-bold uppercase tracking-widest ${t.status === "published" ? "text-fleur-rose" : "text-fleur-ink/50"}`}>{t.status === "published" ? "Available" : "Draft"}</p>
-                  </div>
+          {/* Template chooser — horizontal snap strip */}
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="floral-divider whitespace-nowrap text-xs">Choose a template</div>
+              </div>
+              {templates.length > 1 && (
+                <div className="hidden sm:flex items-center gap-1.5 ml-4">
+                  <button
+                    onClick={() => scrollStrip(-1)}
+                    className="w-9 h-9 rounded-full bg-white border border-fleur-blush/60 text-fleur-ink/60 flex items-center justify-center hover:bg-fleur-blush/50 hover:text-fleur-ink transition-all active:scale-95"
+                    aria-label="Scroll templates left"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => scrollStrip(1)}
+                    className="w-9 h-9 rounded-full bg-white border border-fleur-blush/60 text-fleur-ink/60 flex items-center justify-center hover:bg-fleur-blush/50 hover:text-fleur-ink transition-all active:scale-95"
+                    aria-label="Scroll templates right"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
-              );
-            })}
-            {templates.length === 0 && (
-              <div className="col-span-full card p-16 text-center animate-fade-in">
-                <Image className="mx-auto w-16 h-16 text-fleur-rose/30 mb-6" />
+              )}
+            </div>
+
+            {templates.length === 0 ? (
+              <div className="card p-14 text-center animate-fade-in">
+                <Image className="mx-auto w-14 h-14 text-fleur-rose/30 mb-5" />
                 <h3 className="font-display font-bold text-xl text-fleur-ink mb-2">No designs published yet</h3>
-                <p className="text-fleur-ink/50 text-sm mb-6">
+                <p className="text-fleur-ink/50 text-sm mb-6 max-w-sm mx-auto">
                   Ask an administrator to upload and publish a photo strip design.
                 </p>
-                <button onClick={() => navigate("welcome")} className="btn-ghost text-sm">
-                  Back to home
-                </button>
+                <button onClick={() => navigate("welcome")} className="btn-ghost text-sm">Back to home</button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div
+                  ref={scrollRef}
+                  className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4 px-1"
+                >
+                  {templates.map((t, idx) => {
+                    const isSelected = selectedId === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setSelectedId(t.id)}
+                        className={`snap-start shrink-0 w-[132px] sm:w-[150px] text-left rounded-2xl p-2.5 transition-all duration-300 animate-slide-up ${
+                          isSelected
+                            ? "bg-white ring-2 ring-fleur-rose shadow-[0_12px_30px_rgba(212,165,165,0.35)] -translate-y-1"
+                            : "bg-white/70 border border-fleur-blush/50 hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)]"
+                        }`}
+                        style={{ animationDelay: `${idx * 70}ms` }}
+                      >
+                        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-[#2c2a2c] shadow-inner">
+                          <MiniStrip template={t} />
+                          {isSelected && (
+                            <div className="absolute inset-0 rounded-xl ring-2 ring-inset ring-white/70 pointer-events-none" />
+                          )}
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-fleur-rose text-white flex items-center justify-center shadow-md animate-fade-in">
+                              <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                            </div>
+                          )}
+                          <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 bg-black/40 backdrop-blur px-2 py-0.5 rounded-full text-[9px] font-semibold text-white">
+                            {t.frames?.length || 0} slots
+                          </div>
+                        </div>
+                        <div className="mt-2.5 px-0.5">
+                          <p className="text-xs font-bold text-fleur-ink truncate">{t.name}</p>
+                          <p className={`text-[10px] font-semibold uppercase tracking-wider mt-0.5 ${t.status === "published" ? "text-fleur-rose" : "text-fleur-ink/40"}`}>
+                            {t.status === "published" ? "Available" : "Draft"}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-fleur-cream to-transparent" />
               </div>
             )}
-          </div>
+          </section>
 
+          {/* Detailed preview */}
           {template && (
-            <section className="card p-8 md:p-12 animate-slide-up">
-              <div className="flex flex-col lg:flex-row gap-10 items-start">
-                <div className="lg:w-1/2">
-                  <div className="relative">
-                    <div className="absolute -top-10 left-0 flex items-center gap-2 text-xs font-bold text-fleur-ink/70 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-fleur-blush/40 shadow-sm">
-                      <Image className="w-3 h-3 text-fleur-rose" /> Preview
+            <section className="card p-6 sm:p-10 animate-slide-up">
+              <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
+                <div className="w-full lg:w-1/2">
+                  <div className="relative rounded-2xl bg-fleur-blush/40 border border-fleur-blush/60 p-4 sm:p-6 flex items-center justify-center min-h-[280px]">
+                    <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-bold text-fleur-ink/70 border border-fleur-blush/50 shadow-sm uppercase tracking-wider">
+                      <Image className="w-3 h-3 text-fleur-rose" /> Live preview
                     </div>
-                    <PhotoStripRenderer
-                      template={template}
-                      photos={photos}
-                      maxDimension={1200}
-                      onReady={handleRendererReady}
-                      filter={filter}
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all"></div>
+                    <div className="max-h-[440px] flex items-center justify-center">
+                      <PhotoStripRenderer
+                        template={template}
+                        photos={photos}
+                        maxDimension={1200}
+                        onReady={handleRendererReady}
+                        filter={filter}
+                      />
+                    </div>
                   </div>
-                  <p className="mt-6 text-sm text-fleur-ink/60 leading-relaxed">
-                    Your four pictures are placed according to the frame positions configured by the administrator.
+                  <p className="mt-4 text-xs text-fleur-ink/50 leading-relaxed text-center">
+                    Your photos are placed into the slots configured for this design.
                   </p>
                 </div>
-                <div className="lg:w-1/2 flex flex-col gap-5">
+
+                <div className="w-full lg:w-1/2 flex flex-col gap-6">
                   <div>
-                    <h3 className="font-display font-bold text-xl text-fleur-ink mb-2">{template.name}</h3>
-                    <p className="text-fleur-ink/60 text-sm">
-                      {template.frames?.length || 0} photo frame(s) configured &middot;
-                      {template.status === "published" ? "Published" : "Unpublished"}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="badge-published">Selected</span>
+                      <span className="badge-draft">{template.frames?.length || 0} slots</span>
+                    </div>
+                    <h3 className="font-display font-bold text-2xl text-fleur-ink mb-1">{template.name}</h3>
+                    <p className="text-fleur-ink/50 text-sm">
+                      {template.status === "published" ? "Ready to print" : "Unpublished preview"}
                     </p>
                   </div>
-                  <div className="pt-4">
+
+                  <div>
+                    <p className="flex items-center gap-2 text-[10px] font-bold text-fleur-ink/50 uppercase tracking-widest mb-3">
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-fleur-rose" /> Photo filter
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {FILTERS.map((f) => (
+                        <button
+                          key={f.id}
+                          onClick={() => setFilter(f.id)}
+                          className={`px-4 py-2 rounded-full text-xs font-bold border transition-all active:scale-95 ${
+                            filter === f.id
+                              ? "bg-fleur-rose border-fleur-rose text-white shadow-[0_4px_12px_rgba(212,165,165,0.35)]"
+                              : "bg-white border-fleur-blush/60 text-fleur-ink/60 hover:bg-fleur-blush/50"
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-auto flex flex-col gap-3 pt-2">
                     <button
                       onClick={handleSavePDF}
                       disabled={!allTaken || !previewUrl || generating}
-                      className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]"
+                      className="btn-primary w-full py-4 flex items-center justify-center gap-3 text-base shadow-[0_10px_25px_rgba(212,165,165,0.35)] hover:shadow-[0_15px_35px_rgba(212,165,165,0.45)]"
                     >
                       <FileText className="w-5 h-5" />
                       {generating ? "Saving PDF…" : "Save as PDF"}
@@ -225,17 +331,15 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
                     <button
                       onClick={handleSaveImage}
                       disabled={!allTaken || !previewUrl || generating}
-                      className="btn-soft w-full py-5 flex items-center justify-center gap-3 text-lg border border-fleur-blush/40 hover:bg-fleur-blush/50"
+                      className="btn-soft w-full py-4 flex items-center justify-center gap-3 text-base hover:bg-fleur-blush/50"
                     >
-                      <Download className="w-5 h-5" />
-                      Save as Image
+                      <Download className="w-5 h-5" /> Save as Image
                     </button>
-                    <button
-                      onClick={() => setSelectedId(null)}
-                      className="btn-ghost w-full py-3 text-sm flex items-center justify-center gap-2 hover:bg-fleur-blush/50"
-                    >
-                      <RefreshCw className="w-4 h-4" /> Choose a different design
-                    </button>
+                    {!allTaken && (
+                      <p className="text-center text-xs text-fleur-ink/40">
+                        Capture all four photos to export.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -243,6 +347,6 @@ export default function StripSelectionPage({ navigate, sessionId: passedSessionI
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
